@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Text>Command Apuntes_de_Csharp_Revit_API</Text>
+    <Description>Some description for Apuntes_de_Csharp_Revit_API</Description>
+    <Assembly>Apuntes_de_Csharp_Revit_API.dll</Assembly>
+    <FullClassName>Apuntes_de_Csharp_Revit_API.Command</FullClassName>
+    <ClientId>1b7040d9-83e9-4963-a942-1d1d7e2bf3f6</ClientId>
+    <VendorId>com.typepad.thebuildingcoder</VendorId>
+    <VendorDescription>The Building Coder, http://thebuildingcoder.typepad.com</VendorDescription>
+  </AddIn>
+  <AddIn Type="Application">
+    <Name>Application Apuntes_de_Csharp_Revit_API</Name>
+    <Assembly>Apuntes_de_Csharp_Revit_API.dll</Assembly>
+    <FullClassName>Apuntes_de_Csharp_Revit_API.App</FullClassName>
+    <ClientId>d74560da-5ad8-4f86-9c6e-87ae6bd13b7b</ClientId>
+    <VendorId>com.typepad.thebuildingcoder</VendorId>
+    <VendorDescription>The Building Coder, http://thebuildingcoder.typepad.com</VendorDescription>
+  </AddIn>
+</RevitAddIns>
