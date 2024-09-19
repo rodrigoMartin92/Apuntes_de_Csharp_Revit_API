@@ -16,12 +16,14 @@ namespace Apuntes_de_Csharp_Revit_API
 {
     internal class App : IExternalApplication
     {
-        public Result OnStartup(UIControlledApplication a)
+        public Result OnStartup(UIControlledApplication application)
+        // Este metodo se ejecuta cuando la aplicacion se inicia 
         {
             return Result.Succeeded;
         }
 
-        public Result OnShutdown(UIControlledApplication a)
+        public Result OnShutdown(UIControlledApplication application)
+        // Este metodo se ejecuta cuando la aplicacion se cierra 
         {
             return Result.Succeeded;
         }
