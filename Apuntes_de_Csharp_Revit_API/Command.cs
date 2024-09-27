@@ -53,6 +53,16 @@ namespace Apuntes_de_Csharp_Revit_API
             uidoc.Document devuelve el documento activo que está siendo editado por el usuario en la interfaz gráfica de Revit.
             A través de doc, puedes acceder y modificar los elementos dentro del archivo de proyecto. */
 
+            // ESTRUCTURA TRY CATCH BASICO.
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
             // -------------------------------------- TRABAJO CON VARIABLES "elements" y "message" -----------------------------------
 
             // "message" y "elements"
@@ -240,6 +250,386 @@ namespace Apuntes_de_Csharp_Revit_API
                 message = ex.ToString();
             }
 
+            // SELECCION PUNTUAL CON PickObject
+            try
+            {
+                // Seleccionamos un elemento completo en el modelo.
+                // Lo que obtenemos aquí es una "Reference" que apunta a un "Element".
+                Reference ReferenciaPuntual_1 = uidoc.Selection.PickObject(ObjectType.Element, "Selecciona un elemento");
+
+                // Seleccionamos una arista (Edge) de un elemento en el modelo.
+                // Lo que obtenemos aquí también es una "Reference", pero esta vez la referencia apunta a una arista específica del elemento.
+                Reference ReferenciaPuntual_2 = uidoc.Selection.PickObject(ObjectType.Edge, "Selecciona una arista");
+
+                // Podemos obtener el elemento completo usando la "Reference" obtenida de la selección de un "Element".
+                // Hay dos maneras de hacerlo: usando el ElementId o directamente la Reference.
+
+                // Opción 1: Obtener el Element usando el ElementId de la referencia.
+                Element ElementoDesdeLaReferencia_1 = doc.GetElement(ReferenciaPuntual_1.ElementId);
+
+                // Opción 2: Obtener el Element directamente usando la Reference (internamente usa el ElementId).
+                Element ElementoDesdeLaReferencia_2 = doc.GetElement(ReferenciaPuntual_1);
+
+                // Ambas líneas anteriores devolverán el mismo Element, ya que Reference.ElementId apunta al mismo elemento.
+
+                // Cuando seleccionamos una arista, la referencia apunta a una parte específica del elemento.
+                // Podemos obtener el elemento completo desde la referencia de la arista.
+                Element ElementoDesdeLaArista = doc.GetElement(ReferenciaPuntual_2.ElementId);
+
+                // Obtener el objeto geométrico (GeometryObject) desde la referencia.
+                // En este caso, obtenemos la arista (Edge) a la que hace referencia.
+                GeometryObject ObjetoGeometrico_1 = ElementoDesdeLaReferencia_1.GetGeometryObjectFromReference(ReferenciaPuntual_2);
+
+                // Convertimos el GeometryObject a una arista (Edge), que es lo que seleccionamos.
+                Edge Element_Borde_1 = ObjetoGeometrico_1 as Edge;
+
+                // Ahora tenemos acceso a la arista específica del elemento, a través de la referencia.
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            // SELECCIONAMOS VARIOS ELEMENTOS - USO DE FUNCION FLECHA.
+            try
+            {
+                IList<Reference> Referencias_1 = uidoc.Selection.PickObjects(ObjectType.Element, "Selecciona varios elementos");
+                // Obtenemos una lista de referencias, pero estas referencias son a Elements.
+
+                // Primera manera de agregar los Element a una lista, sin funcion flecha.
+                List<string> ListaElements_1 = new List<string>(); // Inicializar la lista de strings
+                foreach (Reference Referencia in Referencias_1)
+                {
+                    // Obtenemos el Element a partir de la referencia y accedemos a su nombre
+                    Element elemento = doc.GetElement(Referencia.ElementId);
+
+                    // Agregamos el nombre del elemento a la lista
+                    ListaElements_1.Add(elemento.Name);
+                }
+
+                // Segunda manera de agregar los Element a una lista, con funcion flecha.
+                List<string> ListaElements_2 = Referencias_1.Select(Referencia => doc.GetElement(Referencia.ElementId).Name).ToList();
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            // SELECCION CON FILTROS - El filtro esta en una clase nueva llamada "FiltroDeSeleccionDeMuros_1"
+            try
+            {
+                // Creamos una instancia de filtro usando una clase de filtro ya creada
+                ISelectionFilter FiltroDeSeleccionDeMuro_1 = new FiltroDeSeleccionDeMuros_1();
+
+                // Seleccionamos un muro usando la instancia del filtro creada, y obtenemos la referencia del mismo.
+                Reference SeleccionDeMuroFiltrado_1 = uidoc.Selection.
+                    PickObject(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione un muro");
+                // Obtenemos el Element desde la referencia
+                Element ElementoSeleccionado_1 = doc.GetElement(SeleccionDeMuroFiltrado_1.ElementId);
+
+                // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de referencias.
+                IList<Reference> SeleccionDeMurosFiltrados_2 = uidoc.Selection.
+                    PickObjects(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione muros");
+
+                // Obtenemos una lista de Element desde la lista de Reference
+                IList<Element> ListaDeElementos = new List<Element>();
+                foreach (Reference Referencia in SeleccionDeMurosFiltrados_2)
+                {
+                    Element ElementoSeleccionado_2 = doc.GetElement(Referencia.ElementId);
+                    ListaDeElementos.Add(ElementoSeleccionado_2);
+                }
+            }
+            catch (Exception ex) 
+            { 
+                message = ex.ToString(); 
+            }
+
+            // SELECCION CON FILTROS - Filtramos caras planas y mostramos su nombre y area.
+            try
+            {
+                ISelectionFilter FiltroDeCarasPlanas_1 = new FiltroDeSeleccionDeCarasPlanas_1(uidoc.Document);
+                // El filtro esta definido en una nueva clase llamada "FiltroDeSeleccionDeCarasPlanas_1"
+
+                Reference CarasDeReferencia = uidoc.Selection.PickObject(ObjectType.Face, FiltroDeCarasPlanas_1, "Seleccione caras");
+                if (CarasDeReferencia != null)
+                {
+                    // Obtenemos el elemento y la cara del elemento.
+                    Element Elemento = doc.GetElement(CarasDeReferencia.ElementId);
+                    GeometryObject GeometriaDelElemento = Elemento.GetGeometryObjectFromReference(CarasDeReferencia);
+                    Face Cara = GeometriaDelElemento as Face;
+
+                    // Mostramos el nombre y el area del elemento.
+                    TaskDialog.Show("Superficie seleccionada", "Nombre del elemento: " + Elemento.Name + "\n"
+                        + "Area del elemento" + Cara.Area.ToString());
+                }
+            }
+            catch(Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            // SELECCION POR RECTANGULO "PickElementsByRectangle"
+            try
+            {
+                // Creamos una instancia de filtro usando una clase de filtro ya creada
+                ISelectionFilter FiltroDeSeleccionDeMuro_1 = new FiltroDeSeleccionDeMuros_1();
+
+                // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de Element.
+                IList<Element> SeleccionDeMurosFiltrados_2 = uidoc.Selection.
+                    PickElementsByRectangle(FiltroDeSeleccionDeMuro_1, "Seleccione muros");
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            // SELECCIONAR ELEMENTOS CON PickObjects Y FILTRO - Permite seleccionar por rectangulo
+            try
+            {
+                ISelectionFilter selectionFilter = new FiltroDeSeleccionDeMuros_1();
+                IList<Reference> referencesPre = new List<Reference>();
+                List<ElementId> elementIds = new List<ElementId>();  // Inicializamos como lista vacía
+
+                // Nueva selección de objetos. Partimos de preselcción anterior
+                IList<Reference> references = uidoc.Selection.PickObjects(ObjectType.Element,
+                    selectionFilter, "Seleccionar elementos");
+
+                // Necesitamos iDs. MODO LARGO
+                foreach (Reference referenceTotal in references)
+                {
+                    elementIds.Add(referenceTotal.ElementId);
+                }
+
+                // Mostramos en pantalla la selección actual
+                uidoc.ShowElements(elementIds);
+
+                // Incorporamos los IDs a selección actual
+                uidoc.Selection.SetElementIds(elementIds);
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+                return Result.Failed;  // Aseguramos que se devuelva el resultado fallido en caso de excepción
+            }
+
+
+
+
+            // AGREGAR UNA A UNA SELECCION PREVIA UNA NUEVA SELECCION
+            try
+            {
+                ISelectionFilter selectionFilter = new FiltroDeSeleccionDeMuros_1();
+                IList<Reference> referencesPre = new List<Reference>();
+                IList<Reference> referencesPre_2 = new List<Reference>();
+                ICollection<ElementId> elementIds = uidoc.Selection.GetElementIds();
+                // Agregamos a la lista de "Reference" las "Reference" desde los "ElementIds"
+                foreach (ElementId elementId in elementIds)
+                {
+                    Element element = uidoc.Document.GetElement(elementId);
+                    Reference reference = Reference.ParseFromStableRepresentation(uidoc.Document, element.UniqueId);
+                    referencesPre.Add(reference);
+                }
+                // Agregamos a la lista de "Reference" las "Reference" desde los "ElementIds" - Metodo abreviado con funcion Flecha
+                // De los id anterioers a IList<Reference> MODO CORTO 1 LINEA
+                referencesPre_2 = elementIds.Select(x => Reference.ParseFromStableRepresentation
+                (uidoc.Document, uidoc.Document.GetElement(x).UniqueId)).ToList();
+
+                //Nueva selección de objetos. Partimos de preselcción anterior
+                IList<Reference> references = uidoc.Selection.PickObjects(ObjectType.Element,
+                    selectionFilter, "Seleccionar elementos", referencesPre);
+                // Podemos eliminar la selacción actual
+                elementIds.Clear();
+                // Necesitamos iDs. MODO LARGO
+                foreach (Reference referenceTotal in references)
+                {
+                    elementIds.Add(referenceTotal.ElementId);
+                }
+
+                // Mostramos en pantalla la selección actual
+                uidoc.ShowElements(elementIds);
+
+                // Incorporamos los IDs a selección actual
+                uidoc.Selection.SetElementIds(elementIds);
+                return Result.Succeeded;
+            }
+            catch( Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            // ----------------------------------- FILTROS ------------------------------------
+
+            // FILTROS RAPIDOS
+            try
+            {
+                // Elementos que contienen un punto en especifico
+                XYZ Punto_1 = new XYZ(0, 0, 0);
+                BoundingBoxContainsPointFilter Filtro = new BoundingBoxContainsPointFilter(Punto_1);
+                FilteredElementCollector ColectorFitlrado = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElement = ColectorFitlrado.WherePasses(Filtro).ToElements();
+
+                // Caso inverso
+                BoundingBoxContainsPointFilter Filtro_2 = new BoundingBoxContainsPointFilter(Punto_1, true);
+                FilteredElementCollector ColectorFitlrado_2 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElement_2 = ColectorFitlrado_2.WherePasses(Filtro_2).ToElements();
+
+                // Caso inverso, solamente muros, ya que selecciona toda clase de cosas si no se especifica una clase.
+                FilteredElementCollector ColectorFitlrado_3 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElement_3 = ColectorFitlrado_3.OfClass(typeof(Wall)).WherePasses(Filtro_2).ToElements();
+            }
+            catch ( Exception ex )
+            {
+                message = ex.ToString();
+            }
+
+            try
+            {
+                // Elementos cortados o incluidos en una BuildingBox
+                double ValorCreciente = 10;
+                Outline Outline_1 = new Outline(new XYZ (0,0,0), new XYZ(ValorCreciente,ValorCreciente, ValorCreciente));
+
+                BoundingBoxIntersectsFilter Filtro = new BoundingBoxIntersectsFilter(Outline_1);
+                FilteredElementCollector ColectorFitlrado = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElement = ColectorFitlrado.WherePasses(Filtro).ToElements();
+
+                // Caso inverso, filtrando por clase tambien
+                BoundingBoxIntersectsFilter Filtro_2 = new BoundingBoxIntersectsFilter(Outline_1, true);
+                FilteredElementCollector ColectorFitlrado_2 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElement_2 = ColectorFitlrado_2.WherePasses(Filtro).ToElements();
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            try
+            {
+                // Elementos completamente incluidos en una BuildingBox
+                double ValorCreciente = 10;
+                Outline Outline_1 = new Outline(new XYZ(0, 0, 0), new XYZ(ValorCreciente, ValorCreciente, ValorCreciente));
+
+                BoundingBoxIsInsideFilter Filtro = new BoundingBoxIsInsideFilter(Outline_1);
+                FilteredElementCollector ColectorFitlrado = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElement = ColectorFitlrado.WherePasses(Filtro).ToElements();
+
+                // Caso inverso, filtrando por clase tambien
+                BoundingBoxIntersectsFilter Filtro_2 = new BoundingBoxIntersectsFilter(Outline_1, true);
+                FilteredElementCollector ColectorFitlrado_2 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElement_2 = ColectorFitlrado_2.WherePasses(Filtro).ToElements();
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            try
+            {
+                // Elementos Que son muros, tanto tipos como instancias
+                ElementCategoryFilter Filtro = new ElementCategoryFilter(BuiltInCategory.OST_Walls);
+                FilteredElementCollector Colector_1 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElementos = Colector_1.WherePasses(Filtro).ToElements();
+
+                // Metodo mas abreviado
+                FilteredElementCollector Colector_2 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElementos_2 = Colector_2.OfCategory(BuiltInCategory.OST_Walls).ToElements();
+
+                // Metodo mas abreviado - Quita tambien los elementos que son tipos y deja los que son instancias.
+                FilteredElementCollector Colector_3 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElementos_3 = Colector_3.OfCategory(BuiltInCategory.OST_Walls).
+                    WhereElementIsNotElementType().ToElements();
+
+                // Metodo inverso - No es abreviado
+                ElementCategoryFilter FiltroInverso = new ElementCategoryFilter(BuiltInCategory.OST_Walls, true);
+                FilteredElementCollector Colector_4 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElementos_4 = Colector_4.WherePasses(FiltroInverso).ToElements();
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            try
+            {
+                // Filtro muy usado - Abreviado - Filtra los elementos que son instancias existentes
+                FilteredElementCollector Colector_1 = new FilteredElementCollector(doc);
+                IList<Element> ListaDeElementos_1 = Colector_1.OfClass(typeof(FamilyInstance)).ToElements();
+
+                // Podemos obtener los nombres de los Element
+                List<string> Nombres = ListaDeElementos_1.Select(Elemento => Elemento.Name).ToList();
+
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            try
+            {
+                // Filtro que toma varios tipos diferentes
+                List<Type> ListaElementType = new List<Type>() { typeof(Wall),  typeof(FamilyInstance) };
+
+
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            try
+            {
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+
+
 
             // ----------------------------------- CREACION DE ELEMENTOS ------------------------------------
 
@@ -315,5 +705,70 @@ namespace Apuntes_de_Csharp_Revit_API
             return Result.Succeeded; // Muestra que la clase tuvo exito en su ejecucion
         }
 
+    }
+
+    public class FiltroDeSeleccionDeMuros_1 : ISelectionFilter
+    // Este filtro tendra la funcion de permitir la seleccion de muros que midan entre 3 y 8 metros.
+    {
+        public bool AllowElement(Element elemento)
+        {
+            // Verificamos si el elemento es un muro
+            if (elemento is Wall muro)
+            {
+                // Intentamos obtener el parámetro de altura del muro
+                Parameter alturaParametro = muro.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM);
+
+                if (alturaParametro != null && alturaParametro.HasValue)
+                {
+                    // Convertimos la altura a metros
+                    double alturaMuro = alturaParametro.AsDouble();
+                    alturaMuro = UnitUtils.ConvertFromInternalUnits(alturaMuro, UnitTypeId.Meters);
+
+                    // Devolvemos true si la altura está entre 3 y 8 metros
+                    if (alturaMuro >= 3 && alturaMuro <= 8)
+                    {
+                        return true;
+                    }
+                }
+            }
+            // Si el elemento no es un muro o no cumple las condiciones, devolvemos false
+            return false;
+        }
+
+        public bool AllowReference(Reference referencia, XYZ posicion)
+        {
+            // No trabajamos con referencias todavía, así que retornamos false.
+            return false;
+        }
+    }
+
+
+    public class FiltroDeSeleccionDeCarasPlanas_1 : ISelectionFilter
+    // Este filtro tendra la funcion de permitir la seleccion de muros que midan entre 3 y 8 metros.
+    {
+        Document doc = null;
+        public FiltroDeSeleccionDeCarasPlanas_1(Document doc)
+        {
+            this.doc = doc;
+        }
+        public bool AllowElement(Element elemento)
+        {
+            // No trabajamos con Element, retornamos siempre true.
+            return true;
+        }
+
+        public bool AllowReference(Reference referencia, XYZ posicion)
+        {
+            
+            Element elemento = doc.GetElement(referencia.ElementId);
+            GeometryObject GeometriaDelObjeto = elemento.GetGeometryObjectFromReference(referencia);
+            PlanarFace CaraPlana = GeometriaDelObjeto as PlanarFace;
+            if (CaraPlana != null)
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 }
