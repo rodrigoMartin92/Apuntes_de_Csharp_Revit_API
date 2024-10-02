@@ -28,9 +28,6 @@ namespace Apuntes_de_Csharp_Revit_API
             MessageBox.Show("MessageBox.Show");
             // Linea de texto en pantalla simple
 
-            TaskDialog.Show("Punto de interrupcion", "Se detiene la ejecicion en esta linea");
-            // Aca se crea un punto de interrupcion, que permite observar el contenido de las variables que existen.
-
             string CadenaDeTexto_1 = "CadenaDeTexto_1";
             string CadenaDeTexto_2 = "CadenaDeTexto_2";
             string CadenaDeTexto_3 = "CadenaDeTexto_3";
