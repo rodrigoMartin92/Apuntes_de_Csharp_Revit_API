@@ -1,7 +1,6 @@
 
 /* -------------------------------------------- INDICE --------------------------------------------
-    
-    
+
     1.1 VARIABLES INICIALES
     1.2 TRABAJO CON VARIABLES "elements" y "message"
     1.3 TRABAJANDO CON TRANSACCION
@@ -39,7 +38,7 @@
 
 
 
-#region Namespaces
+#region Namespaces - IMPORTACIONES
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
@@ -60,7 +59,7 @@ namespace Apuntes_de_Csharp_Revit_API
 {
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]   // Esta linea configura que los cambios se realizan a travez de transacciones
-                                                // Esta la opcion de solo lectura tambien, pero seria rarisimo que se usara.
+                                                // Esta la opcion de solo lectura, pero seria rarisimo que se usara.
     [Journaling(JournalingMode.UsingCommandData)] // Esta linea sirve para generar un archivo que va a recolectar
                                                   // los errores que cometa el usuario
     public class Command : IExternalCommand // "IExternalCommand" es una interfaz de Revit, exige que este el metodo Excecute.
@@ -73,8 +72,12 @@ namespace Apuntes_de_Csharp_Revit_API
             )
         {
 
+            #region
+            #endregion
+
             // 1.1 -------------------------------------------- VARIABLES INICIALES ----------------------------------------------------
 
+            #region VALORES INICIALES
             UIApplication uiapp = commandData.Application;
             /* UIApplication es una clase que proporciona acceso a la aplicación de Revit en ejecución.
             A través de ella puedes interactuar con la interfaz gráfica de usuario y los documentos abiertos.
@@ -97,8 +100,9 @@ namespace Apuntes_de_Csharp_Revit_API
             Esta clase contiene toda la información del proyecto, incluyendo elementos del modelo, parámetros, vistas, etc.
             uidoc.Document devuelve el documento activo que está siendo editado por el usuario en la interfaz gráfica de Revit.
             A través de doc, puedes acceder y modificar los elementos dentro del archivo de proyecto. */
+            #endregion
 
-            // ESTRUCTURA TRY CATCH BASICO.
+            #region ESTRUCTURA TRY CATCH SIMPLE
             try
             {
 
@@ -107,13 +111,15 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // 1.2 -------------------------------------- TRABAJO CON VARIABLES "elements" y "message" -----------------------------------
 
-            // "message" y "elements"
-
+            #region MODIFICACION DE message
             message = "Podemos cambiar el valor de 'message'";
+            #endregion
 
+            #region COLECTOR DE MUROS BASICO
             try
             {
                 FilteredElementCollector Colector_Muros = new FilteredElementCollector(doc).
@@ -135,41 +141,34 @@ namespace Apuntes_de_Csharp_Revit_API
                 return Result.Failed; // Esta linea ejecuta el mensaje de error, osea lo muestra.
                                       // sirve para arrojar que la clase fallo su ejecucion.
             }
+            #endregion
 
             // 1.3 ---------------------------------------------- TRABAJANDO CON TRANSACCION --------------------------------------------------
 
+            #region TRANSACCION BASICA - Es el menos "prolijo", ya que la estructura no es tan visual y nos puede hacer olvidar cerrar la transaccion
             try
             {
                 // Modify document within a transaction
-
-                using (Transaction Transaccion_1 = new Transaction(doc)) // Esta linea crea una nueva transaccion
-                {
-                    Transaccion_1.Start("Transaction Name"); // Esta linea "abre" la transaccion,
-                    // todo lo que se ejecuta a partir de aca requiere de ser "guardado" al cerrar Revit
-
-                    Transaccion_1.Commit(); // Cierra la transaccion, de no estar cerrada se producen errores.
-                }
+                Transaction Transaccion_1 = new Transaction(doc);
+                Transaccion_1.Start("Transaction Name");
+                    // Aca va el contenido de la transaccion
+                Transaccion_1.Commit();
             }
             catch (Exception ex)
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // 1.4 ----------------------------------- TRABAJANDO "JournalingMode.UsingCommandData" ------------------------------------
-
+            #region TRANSACCION CON using - Mas prolijo, su estructura es mas visual y nos ayuda a recordar cerrar la transaccion.
             try
             {
                 // Modify document within a transaction
 
                 using (Transaction Transaccion_2 = new Transaction(doc)) // Esta linea crea una nueva transaccion
                 {
-                    Transaccion_2.Start("JournalingMode.UsingCommandData"); // Esta linea "abre" la transaccion,
-
-                    doc.ProjectInformation.Author = "Autor 1"; // Cambia el nombre del autor del proyecto
-                    // Este cambio se puede ver en -> Menu: "Gestionar" -> "Informacion del proyecto"
-                    commandData.JournalData.Add("Dato 1", "Dato por autor 1"); // Agrega una linea al final del "JournalData"
-                    // RUTA -> C:\Users\ASUS\AppData\Local\Autodesk\Revit\Autodesk Revit 2023\Journals
-
+                    Transaccion_2.Start("Transaction Name"); // Esta linea "abre" la transaccion,
+                    // todo lo que se ejecuta a partir de aca requiere de ser "guardado" al cerrar Revit
 
                     Transaccion_2.Commit(); // Cierra la transaccion, de no estar cerrada se producen errores.
                 }
@@ -178,9 +177,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // 1.5 ----------------------------------- OBTENCIOND DE ELEMENTOS Y SUS Ids ------------------------------------
 
+            #region OBTENCION DE LOS TIPOS DE Id QUE EXISTEN EN REVIT
             Selection seleccion_1 = uidoc.Selection; // agrega a "seleccion_1" las instancias seleccionadas.
             ElementId Elemento_1Id = seleccion_1.GetElementIds().FirstOrDefault(); // Obtiene el Id del primer elemento seleccionado.
             IList<ElementId> Lista_ElementosId = seleccion_1.GetElementIds().ToList(); // Obtiene todos los Ids de los elementos seleccionados.
@@ -199,11 +200,11 @@ namespace Apuntes_de_Csharp_Revit_API
             //En la API de Revit, una ICollection<T> es una interfaz que representa una colección de objetos del tipo T.
             //Es similar a una lista o un conjunto, pero con una interfaz más básica,
             //sin algunas de las funcionalidades avanzadas que tienen otras estructuras como List<T> o HashSet<T>.
-
+            #endregion
 
             // 2.0 ----------------------------------- SELECCION EN EL MODELO DE REVIT ------------------------------------
 
-            // 2.1 SELECCION LIBRE DEL PUNTO
+            #region 2.1 SELECCION LIBRE DEL PUNTO
             try // Para los metodos de seleccion es NECESARIO usar el Try Catch para cuando se apriete "escape" o no se seleccion por algun motivo.
             {
                 XYZ Punto_1 = uidoc.Selection.PickPoint(); // Selecciona un punto en la pantalla y almacena las coordenadas en "Punto_1"
@@ -217,9 +218,9 @@ namespace Apuntes_de_Csharp_Revit_API
                 message = ex.ToString(); // Se modifica "message" para cubrir el error
                 return Result.Failed; // Se cancela la operacion, se genera el cartel de error con el "message"
             }
+            #endregion
 
-
-            // 2.2 SELECCION CONDICIONADA DEL PUNTO
+            #region 2.2 SELECCION CONDICIONADA DEL PUNTO
             try
             {
                 ObjectSnapTypes SnapTypes_Objeto = ObjectSnapTypes.Endpoints | ObjectSnapTypes.Centers;
@@ -235,8 +236,9 @@ namespace Apuntes_de_Csharp_Revit_API
                 message= ex.ToString();
                 return Result.Failed;
             }
+            #endregion
 
-            // 2.3 SELECCION POR RECTANGULO "TODO INCLUIDO" y "TODO LO INCLUIDO Y CORTADO"
+            #region 2.3 SELECCION POR RECTANGULO "TODO INCLUIDO" y "TODO LO INCLUIDO Y CORTADO"
             try
             {
                 PickedBox SeleccionPorRectangulo_1 = uidoc.Selection.PickBox(PickBoxStyle.Directional, "Seleccion esquinas");
@@ -253,8 +255,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message= ex.ToString();
             }
+            #endregion
 
-            // 2.4 CREACION DE UN CurveArray A TRAVES DE UN PickBox
+            #region 2.4 CREACION DE UN CurveArray A TRAVES DE UN PickBox
             try
             {
                 PickedBox SeleccionPorRectangulo_2 = uidoc.Selection.PickBox(PickBoxStyle.Directional, "Seleccion esquinas");
@@ -294,8 +297,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // 2.5 SELECCION PUNTUAL CON PickObject
+            #region 2.5 SELECCION PUNTUAL CON PickObject
             try
             {
                 // Seleccionamos un elemento completo en el modelo.
@@ -334,8 +338,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // 2.6 SELECCIONAMOS VARIOS ELEMENTOS - USO DE FUNCION FLECHA.
+            #region 2.6 SELECCIONAMOS VARIOS ELEMENTOS - USO DE FUNCION FLECHA.
             try
             {
                 IList<Reference> Referencias_1 = uidoc.Selection.PickObjects(ObjectType.Element, "Selecciona varios elementos");
@@ -359,8 +364,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // 2.7 SELECCION CON FILTROS - El filtro esta en una clase nueva llamada "FiltroDeSeleccionDeMuros_1"
+            #region 2.7 SELECCION CON FILTROS - El filtro esta en una clase nueva llamada "FiltroDeSeleccionDeMuros_1"
             try
             {
                 // Creamos una instancia de filtro usando una clase de filtro ya creada
@@ -388,8 +394,9 @@ namespace Apuntes_de_Csharp_Revit_API
             { 
                 message = ex.ToString(); 
             }
+            #endregion
 
-            // 2.8 SELECCION CON FILTROS - Filtramos caras planas y mostramos su nombre y area.
+            #region 2.8 SELECCION CON FILTROS - Filtramos caras planas y mostramos su nombre y area.
             try
             {
                 ISelectionFilter FiltroDeCarasPlanas_1 = new FiltroDeSeleccionDeCarasPlanas_1(uidoc.Document);
@@ -412,8 +419,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // 2.9 SELECCION POR RECTANGULO "PickElementsByRectangle"
+            #region 2.9 SELECCION POR RECTANGULO "PickElementsByRectangle"
             try
             {
                 // Creamos una instancia de filtro usando una clase de filtro ya creada
@@ -427,8 +435,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // 2.10 SELECCIONAR ELEMENTOS CON PickObjects Y FILTRO - Permite seleccionar por rectangulo
+            #region 2.10 SELECCIONAR ELEMENTOS CON PickObjects Y FILTRO - Permite seleccionar por rectangulo
             try
             {
                 ISelectionFilter selectionFilter = new FiltroDeSeleccionDeMuros_1();
@@ -457,11 +466,9 @@ namespace Apuntes_de_Csharp_Revit_API
                 message = ex.ToString();
                 return Result.Failed;  // Aseguramos que se devuelva el resultado fallido en caso de excepción
             }
+            #endregion
 
-
-
-
-            // 2.11 AGREGAR UNA A UNA SELECCION PREVIA UNA NUEVA SELECCION
+            #region 2.11 AGREGAR UNA A UNA SELECCION PREVIA UNA NUEVA SELECCION
             try
             {
                 ISelectionFilter selectionFilter = new FiltroDeSeleccionDeMuros_1();
@@ -502,10 +509,13 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // 3.0 ----------------------------------- FILTROS ------------------------------------
 
             // 3.1 FILTROS RAPIDOS
+
+            #region FILTRO POR PUNTO - SELECCIONA TODO LO QUE ESTA PASANDO POR UN PUNTO EN ESPECIFICO
             try
             {
                 // Elementos que contienen un punto en especifico
@@ -527,12 +537,14 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region FILTRO POR BoundingBox - SELECCIONA TODO LO QUE ESTA CONTENIDO O CORTADO POR UNA BoundingBox
             try
             {
                 // Elementos cortados o incluidos en una BuildingBox
                 double ValorCreciente = 10;
-                Outline Outline_1 = new Outline(new XYZ (0,0,0), new XYZ(ValorCreciente,ValorCreciente, ValorCreciente));
+                Outline Outline_1 = new Outline(new XYZ(0, 0, 0), new XYZ(ValorCreciente, ValorCreciente, ValorCreciente));
 
                 BoundingBoxIntersectsFilter Filtro = new BoundingBoxIntersectsFilter(Outline_1);
                 FilteredElementCollector ColectorFitlrado = new FilteredElementCollector(doc);
@@ -547,7 +559,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region FILTRO POR BoundingBox - SELECCIONA TODO LO QUE ESTA COMPLETAMENTE CONTENIDO POR UNA BoundingBox
             try
             {
                 // Elementos completamente incluidos en una BuildingBox
@@ -567,7 +581,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region FILTRO POR CATEGORIA (Ejemplo "OST_Walls")
             try
             {
                 // Elementos Que son muros, tanto tipos como instancias
@@ -594,7 +610,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region FILTRO POR CLASE (Ejemplo "FamilyInstance", "Wall", "View") ---- FALTA COMPLETAR MAS
             try
             {
                 // Filtro muy usado - Abreviado - Filtra los elementos que son instancias existentes
@@ -603,15 +621,14 @@ namespace Apuntes_de_Csharp_Revit_API
 
                 // Podemos obtener los nombres de los Element
                 List<string> Nombres = ListaDeElementos_1.Select(Elemento => Elemento.Name).ToList();
-
-
             }
             catch (Exception ex)
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // FILTRO MULTICATEGORIA
+            #region FILTRO MULTICATEGORIA
             try
             {
                 // Filtro que toma varios tipos diferentes
@@ -648,7 +665,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region FILTRO POR ELEMENTOS EN UNA VISTA
             try
             {
                 // Element que dependen de la vista en la que se han creado.
@@ -665,6 +684,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
+
+            #region FILTRO DE ELEMENTOS ESTRUCTURALES
             try
             {
                 // Filtro de elementos estructurales.
@@ -683,7 +705,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region FILTRO DE EXCLUCION
             // Filtro que excluye los elementos que no se seleccionan.
             try
             {
@@ -703,27 +727,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // Filtro que excluye los elementos seleccionados
-            try
-            {
-                // Seleccionamos elementos con una seleccion por rectangulo.
-                IList<Element> ElementosSeleccionados = uidoc.Selection.PickElementsByRectangle("Selecciona elementos");
-                ICollection<ElementId> ElementosSeleccionados_Ids = ElementosSeleccionados.Select(Elementos => Elementos.Id).ToList();
-                ExclusionFilter FiltroDeExclucion = new ExclusionFilter(ElementosSeleccionados_Ids);
-                
-                // Creamos el colector y le aplicamos 2 filtros.
-                FilteredElementCollector Colector_1 = new FilteredElementCollector(doc);
-                Colector_1.WherePasses(FiltroDeExclucion).ToElements();
-                // Aca usamos el filtro que quita los elementos seleccionados de los elementos del colector
-                IList<Element> MurosNoIncluidos = Colector_1.OfClass(typeof(Wall)).ToElements();
-                // Aca aplicamos otro filtro para solamente agregar muros a la lista de elementos.
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-
+            #region FILTRO DE SIMBOLOS
             try
             {
                 Selection Seleccion_1 = uidoc.Selection;
@@ -760,8 +766,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // CREACION DE ESQUEMAS Y FILTRO QUE BUSCA DETERMINADOS ESQUEMAS
+            #region CREACION DE ESQUEMAS Y FILTRO QUE BUSCA DETERMINADOS ESQUEMAS
             try
             {
                 //Creamos un GUID
@@ -800,8 +807,12 @@ namespace Apuntes_de_Csharp_Revit_API
                 TaskDialog.Show("Manual Revit API", string.Join("\n", names));
 
             }
+            #endregion
 
             // 3.2 FILTROS LENTOS
+
+            #region ------------------------------------- FALTA COMPLETAR FILTROS LENTOS  ZZZZZZZZZZ ---------------
+
             catch (Exception ex)
             {
                 message = ex.ToString();
@@ -856,13 +867,13 @@ namespace Apuntes_de_Csharp_Revit_API
                 message = ex.ToString();
             }
 
-
-
+            #endregion
 
             // 4.0 ----------------------------------- CREACION DE ELEMENTOS ------------------------------------
 
             // 4.1 CREACION DE UN MURO
 
+            #region MURO DESDE UNA LINEA
             try
             {
                 // cREAMOS UN MURO SEGUN UNA LINEA
@@ -894,8 +905,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-
+            #region MURO CREADO DESDE UN PERIMETRO VERTICAL
             try
             {
                 // CREAMOS UN MURO USANDO UN PERIMETRO VERTICAL CREADO "MANUALMENTE"
@@ -937,9 +949,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // 4.2 CREACION DE UN SUELO.
 
+            #region SUELO CREADO CON UN AREA HORIZONTAL
             try
             {
                 // CREACION DE UN SUELO A PARTIR DE UN PickBox.
@@ -998,7 +1012,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region SUELO CON PENDIENTE CREADO DESDE UN PICKBOX
             try
             {
                 // CREACION DE UN SUELO CON PENDIENTE A PARTIR DE UN PickBox.
@@ -1057,8 +1073,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // 4.3 MODIFICACION DEL SUELO - Video RAPI 8.3
+
+            #region MODIFICACION DEL SUELO ----------------------------------- REVISAR
             try
             {
                 //Filtramos los niveles, metodo abreviado. Filtro de clase
@@ -1118,15 +1137,16 @@ namespace Apuntes_de_Csharp_Revit_API
 
                     TaskDialog.Show("Manual Revit API", "Suelos creados");
                 }
-
-
             }
             catch (Exception ex)
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // 4.4 CREACION DE PLATAFORMAS DE NIVELACION.
+
+            #region PLATAFORMA A PARTIR DE 2 PERIMETROS HORIZONTALES
             try
             {
                 //Filtramos los niveles, metodo abreviado. Filtro de clase
@@ -1199,11 +1219,13 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // CREACION DE CRISTALERAS
+            // 4.5 CREACION DE CRISTALERAS
+
+            #region CRISTALERAS ------------------------------------------- REVISAR
             try
             {
-
                 // Selección actual. Debemos chequear que la selección es correcta
                 Selection sel = uidoc.Selection;
 
@@ -1293,8 +1315,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // BORRADO DE ELEMENTOS
+            // 4.6 BORRADO DE ELEMENTOS
+
+            #region BORRAR LOS ELEMENTOS SELECCIONADOS
             try
             {
                 //Accedemos con algún objetos seleccionado
@@ -1315,11 +1340,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // EDICION DE ELEMENTOS.
+            // 4.7 EDICION DE ELEMENTOS.
 
-            // CAMBIAR UBICACION DEL ELEMENTO.
-            // En este caso se cambia la ubicacion de una columna cuya ubicacion esta basada en un punto
+            #region CAMBIAR LA UBICACION DE UN ELEMENTO, EN ESTE CASO, UNA COLUMNA QUE ESTA BASADO EN UN PUNTO - USAMOS MoveElement EN EL Id DE LA FAMILIA
             try
             {
 
@@ -1379,8 +1404,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // Ahora cambiamos la ubicacion del "LocationPoint"
+            #region AHORA CAMBIAMOS SU UBICACION REDEFINIENDO LA locationPoint, ES OTRA MANERA DE LOGRAR LO MISMO.
             try
             {
 
@@ -1441,8 +1467,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // Movemos en este caso la "LocationCurve"
+
+            #region CAMBIAMOS LA UBICACION MOVIENDO UNA LocationCurve USANDO Move()
             try
             {
 
@@ -1495,10 +1524,13 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // En este caso creamos una linea y hacemos que la location curve sea igual que la linea creada, es otro metodo diferente.
             // Podemos usar este metodo para torcer un poco las cosas, creando location curves inclinadas en Z,
             // pero el resultado es inestable.
+
+            #region
             try
             {
 
@@ -1557,9 +1589,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
-
+            #endregion
 
             // Copiar elementos
+
+            #region
             try
             {
 
@@ -1607,9 +1641,12 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // ROTAR ELEMENTOS
             // Rotamos elementos segun un eje creado con un "CreateUnbound". En este caso el eje pasa por el centro de la viga.
+
+            #region
             try
             {
                 //Creamos una Reference para poder seleccionar la viga
@@ -1676,8 +1713,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // ROTAR ELEMENTO SEGUN UN PLANO INCLINADO
+            #region
             try
             {
 
@@ -1792,8 +1831,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // SIMETRIA A UN PLANO
+            #region
             try
             {
                 // Accedemos a la selección actual
@@ -1847,8 +1888,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREACION DE MATRICES
+            #region
             try
             {
                 // Accedemos a la selección actual
@@ -1897,8 +1940,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // TRANSFORMAR ELEMENTOS
+            #region
             try
             {
                 //Creamos cuatro puntos cuadricula 10*10
@@ -1954,8 +1999,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // TRANSFORMAR DESDE UNA VISTA 3D
+            #region
             try
             {
 
@@ -2030,8 +2077,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // ALINEAR ELEMENTOS
+            #region
             try
             {
 
@@ -2091,7 +2140,7 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
-
+            #endregion
 
 
 
@@ -2189,9 +2238,8 @@ namespace Apuntes_de_Csharp_Revit_API
 
             #endregion
 
-
-
             // CONVERSION DE UNIDADES
+            #region
             try
             {
                 // Access current selection
@@ -2310,9 +2358,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
 
             // OBTENER NIVELES
+            #region
             try
             {
                 // Access current selection
@@ -2375,8 +2425,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR NIVELES
+            #region
             try
             {
 
@@ -2440,8 +2492,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR REGILLAS
+            #region
             try
             {
                 //Creamos una lista de curves
@@ -2466,8 +2520,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // OBTENEMOS INFORMACION DE LA REGILLA DE UNA COLUMNA
+            #region
             try
             {
 
@@ -2541,8 +2597,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // FASES - INTENTAMOS CAMBIAR UN OBJETO DE FASE
+            #region
             try
             {
 
@@ -2625,8 +2683,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // OPCIONES DE DISEÑO
+            #region
             try
             {
 
@@ -2670,8 +2730,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // OBTENER DATOS DE LA VISTA ACTUAL
+            #region
             try
             {
                 // Obtenemos la vista actual
@@ -2694,8 +2756,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR VISTA 3D
+            #region
             try
             {
                 // Access current selection
@@ -2729,8 +2793,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // DUPLICAR VISTA 3D - SE PUEDE DUPLICAR COMO DEPENDIENTE - Video RAPI 11-3
+            #region
             try
             {
                 //Obtenemos la vista actual
@@ -2772,8 +2838,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // MANIPULACION DE REGIONES DE RECORTE
+            #region
             try
             {
 
@@ -2830,10 +2898,12 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // DIVIDIR UNA REGION DE RECORTE EN SECCIONES.
             // NECESITAMOS PRIMERO "RESTAURAR" LA REGION DE RECORTE, PARA LUEGO SUBDIVIDIRLA.
             // PODEMOS DIVIDIR UNA SUBDIVISION SUCESIVAMENTE.
+            #region
             try
             {
                 //Solo admitimos vista en planta
@@ -2875,8 +2945,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // MANIPULACION DE LOS MODOS TEMPORALES DE LAS VISTAS
+            #region
             try
             {
 
@@ -2928,8 +3000,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // MANIPULACION DE LA ATENUACION LEJANA DE UNA VISTA
+            #region
             try
             {
 
@@ -2972,8 +3046,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // CREAR REVISIONES -> NECESITO APRENDER QUE SON LAS REVISIONES <-
+            // CREAR REVISIONES
+            #region
             try
             {
 
@@ -3018,8 +3094,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // COMBINAR LAS NUVES DE REVISION
+            #region
             try
             {
 
@@ -3076,8 +3154,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // TRABAJO CON FILTROS - FILTROS DE VISUALIZACION PARA APLICAR EN UNA VISTA
+            #region
             try
             {
 
@@ -3125,9 +3205,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // AGREGAMOS REGLAS A LOS FILTROS
             // LOS ELEMENTOS ESTRUCTURALES DESAPARECEN DE LA VISTA
+            #region
             try
             {
                 //Obtenemos la vista actual
@@ -3170,8 +3252,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // MODIFICACION DE FILTROS - CAMBIAMOS EL COLOR DE LOS FILTROS - RAPI 11-12
+            #region
             try
             {
 
@@ -3214,8 +3298,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // AJUSTE DEL ZOOM EN VISTA ACTUAL
+            #region
             try
             {
                 //Obtenemos la UIView que coincide con la vista actual
@@ -3228,8 +3314,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // DESPLAZAR OBJETOS SOLAMENTE EN LA VISTA - UTIL PARA ARMAR POSIBLES ENSAMBLADOS VISUALES.
+            #region
             try
             {
 
@@ -3286,9 +3374,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // GRAFICOS TEMPORALES - INCORPORA GRAFICOS VMP
             // Requiere la imagen .bmp en el proyecto. Debo profundizar en esto para entenderlo bien
+            #region
             try
             {
 
@@ -3344,8 +3434,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR TASKDIALOG MAS COMPLEJOS
+            #region
             try
             {
 
@@ -3420,9 +3512,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // TASKDIALOG CON UN CHECKBOX, TIENE CIERTA "INCOMPATIBILIDAD" CON LAS OPCIONES DE ANTES.
             // La imcompatibilidad es que ".VerificationText" y ".ExtraCheckBox" no pueden estar a la vez en un TaskDialog.
+            #region
             try
             {
 
@@ -3464,8 +3558,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // OTRA OPCION DE TASKDIALOG CON UN CHECKBOX.
+            #region
             try
             {
 
@@ -3509,8 +3605,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // BARRA DE PROGRESO, DE MOMENTO PARECE QUE SU FUNCIONALIDAD ESTA INCOMPLETA
+            #region
             try
             {
                 // Cramos un TaskDialog de Revit para comunicar información al usuario.
@@ -3547,10 +3645,12 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // TRANSACCIONES - 2 ESTRUCTURAS DIFERENTES, USANDO "using" Y SIN USARLO.
             // Tambien hay Subtransacciones, sin nombre y que no se pueden acceder desde el menu "deshacer".
             // transactionGroup.Assimilate(); - Sirve para que el grupo de transacciones se vea en 1 solo paso en el boton deshacer.
+            #region
             try
             {
                 //Creamos TransactionGroup
@@ -3629,8 +3729,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // VALORES DEL BoundingBox
+            #region
             try
             {
 
@@ -3670,9 +3772,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // OBTENER EL GeometryElement - ESTO REQUIERE DEL USO DE Options, DONDE VAMOS A ESPECIFICAR LAS CARACTERISTICAS A BUSCAR.
             // CON ESTE GeometryObject PODEMOS OBTENER EL RESTO DE LAS CARACTERISTICAS GEOMETRICAS DEL OBJETO.
+            #region
             try
             {
 
@@ -3791,9 +3895,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // OBTENEMOS LA SUPERFICIE VIDRIADA DE UNA VENTANA EN ESPECIFICO
             // Requiere el ingreso a una "GeometryInstance", diferente al "GeometryElement" de antes.
+            #region
             try
             {
 
@@ -3886,8 +3992,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREACION DE ETIQUETAS
+            #region
             try
             {
 
@@ -3964,8 +4072,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREACION DE COTAS
+            #region
             try
             {
 
@@ -4066,8 +4176,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // MODIFICACION DE COTAS Y OBTENCION DE INFORMACION DE LAS RESTRICCIONES.
+            #region
             try
             {
 
@@ -4162,8 +4274,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR UN ESTILO DE LINEA - PARA ModelLines POR EJEMPLO
+            #region
             try
             {
 
@@ -4235,8 +4349,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR LINEAS DE DETALLE - RAPI 15 - 10
+            #region
             try
             {
                 //Nombre para Subcategotia y Patron de lineas
@@ -4291,7 +4407,9 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
+            #region
             try
             {
                 //Accedemos a la selección
@@ -4335,8 +4453,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR REGIONES
+
+            #region
             try
             {
 
@@ -4413,8 +4534,10 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // OBTENER INFORMACION DE LOS MATERIALES - CAMBIO DEL COLOR DEL MATERIAL
+            #region
             try
             {
 
@@ -4553,8 +4676,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREAR Y DUPLICAR MATERIALES
+
+            #region
             try
             {
                 //Definimos Transaction
@@ -4605,8 +4731,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // VER LOS DIFERENTES MATERIALES CON LOS QUE ESTA COMPUESTO UN MURO, VOLUMENES
+
+            #region
             try
             {
 
@@ -4695,8 +4824,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
-            // CREACION DE ESQUEMAS - ¿pUEDE SERVIR PARA CREAR CAPAS?
+            // CREACION DE ESQUEMAS - ¿PUEDE SERVIR PARA CREAR CAPAS?
+
+            #region
             try
             {
 
@@ -4875,8 +5007,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // "RECUPERAR" DATOS DE LA ENTITY
+
+            #region
             try
             {
 
@@ -4896,9 +5031,8 @@ namespace Apuntes_de_Csharp_Revit_API
                     message = "Se debe iniciar con un muro seleccionado";
                     return Result.Cancelled;
                 }
-
                 string txtSalida = "Datos recuperados: ";
-                #region Conociendo Guid
+
                 //GUID almacenado Debemos conocer todos los datos y estructura
                 Guid guidSchema = new Guid("4d8a80d3-e1c3-4b83-ada1-ce975e420529");
                 //Obtenemos el Schema
@@ -4918,11 +5052,9 @@ namespace Apuntes_de_Csharp_Revit_API
                     double espesorRecuperado = entity.Get<double>("CampoEspesorMuro", UnitTypeId.Meters /*DisplayUnitType.DUT_METERS*/);
                     txtSalida = txtSalida + "\n\tCampoEspesorMuro: " + espesorRecuperado.ToString("N3") + " metros";
                 }
-                #endregion
 
                 txtSalida = txtSalida + "\n\nDatos recursivos:";
 
-                #region Recursivo
                 IList<Guid> guids = wall.GetEntitySchemaGuids();
 
                 foreach (Guid guid in guids)
@@ -4990,15 +5122,17 @@ namespace Apuntes_de_Csharp_Revit_API
                         }
                     }
                 }
-                #endregion
                 TaskDialog.Show("Revit API Manual", txtSalida);
             }
             catch (Exception ex)
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // BORRAR ESQUEMAS, HAY 2 METODOS
+
+            #region
             try
             {
 
@@ -5066,18 +5200,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
-
-            // GESTION DE ERRORES DE REVIT - Videos RAPI 23 - ...
-            try
-            {
-                // FALTA TRABAJAR ESTE TEMA, PERO ES ENREDADO
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
+            #endregion
 
             // CREACION DE DirectShape - En este caso esta creado con la categoria "Walls", que es algo ilogico.
+
+            #region
             try
             {
                 // Definimos centro
@@ -5132,8 +5259,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CREACION TOTALMENTE MANUAL DEL DirectShape
+
+            #region
             try
             {
 
@@ -5241,8 +5371,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // INFORMACION DEL SiteLocation. - Hay mas metodos en los videos - RAPI 27 - 1
+
+            #region
             try
             {
                 //Obtenemos la SiteLocation.
@@ -5287,9 +5420,12 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // ARCHIVOS VINCULADOS - PARA SUBDIVISION DEL ARCHIVO.
             // CREAR LINK
+
+            #region
             try
             {
 
@@ -5354,8 +5490,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // CARGAR Y DESCARGAR LINK
+
+            #region
             try
             {
 
@@ -5390,8 +5529,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // DESPLAZAR LINK
+
+            #region
             try
             {
                 //Definimos Reference
@@ -5484,8 +5626,11 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
 
             // SISTEMA DE CORRECCION DE ERRORES SEGUN REGLAS DADAS POR REVIT
+
+            #region
             try
             {
                 //Creamos string para salida
@@ -5535,8 +5680,12 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
+            #endregion
+
 
             // ISTEMA DE CORRECCION DE ERRORES SEGUN REGLAS PERSONALIZADAS
+
+            #region
             try
             {
                 //Obtenemos numero de reglas
@@ -5563,88 +5712,23 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
-
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-
-            try
-            {
-
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-
-
-
-            // -----------------------------------  ------------------------------------
-            // -----------------------------------  ------------------------------------
-            // -----------------------------------  ------------------------------------
-            // -----------------------------------  ------------------------------------
-            // -----------------------------------  ------------------------------------
-
-
+            #endregion
 
             return Result.Succeeded; // Muestra que la clase tuvo exito en su ejecucion
         }
-        public class WallSelectionFilterEtiquetas : ISelectionFilter
-        {
-            public bool AllowElement(Element element)
-            {
-                //Solo admitimos la clase Wall
-                if (element is Wall)
-                {
-                    return true;
-                }
-                return false;
-            }
 
-            public bool AllowReference(Reference refer, XYZ point)
-            {
-                return false;
-            }
-        }
+        // 1.1 -------------------------------------------- FUNCIONES ADICIONALES ----------------------------------------------------
+
+        #region CrearLineas()
         public ModelLine CrearLineas(UIDocument uidoc, SketchPlane sketchPlane, XYZ xYZ1, XYZ xYZ2)
         {
             Document doc = uidoc.Document;
             Line line1 = Line.CreateBound(xYZ1, xYZ2);
             return doc.Create.NewModelCurve(line1, sketchPlane) as ModelLine;
         }
+        #endregion
 
+        #region MostrarInfoRevit()
         private void MostrarInfoRevit(Application app)
         {
             TaskDialog dialog_CommandLink1 = new TaskDialog("Instalación de Revit");
@@ -5655,13 +5739,18 @@ namespace Apuntes_de_Csharp_Revit_API
 
             dialog_CommandLink1.Show();
         }
+        #endregion
+
+        #region MostrarInfoDoc()
         private void MostrarInfoDoc(Document doc)
         {
             TaskDialog.Show("Documento activo",
                     "Documento activo: " + doc.Title + "\n"
                     + "Nombre de vista activa: " + doc.ActiveView.Name);
         }
+        #endregion
 
+        #region AddNewRevision()
         private Revision AddNewRevision(Document document, string description, string issuedBy, string issuedTo)
         {
             //Creamos la Revision con los parametros indicados
@@ -5673,12 +5762,16 @@ namespace Apuntes_de_Csharp_Revit_API
             newRevision.RevisionDate = DateTime.Now.ToShortDateString();
             return newRevision;
         }
+        #endregion
 
+        #region XYZString()
         private string XYZString(XYZ point)
         {
             return "(" + point.X + ", " + point.Y + ", " + point.Z + ")";
         }
+        #endregion
 
+        #region GetCenterline()
         private static Line GetCenterline(Wall wall)
         {
             //Creamos nuevas Options
@@ -5704,119 +5797,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             return null;
         }
+        #endregion
 
-
-        public class FlippedWindowCheck : IPerformanceAdviserRule
-        {
-            private List<ElementId> m_FlippedWindows;
-
-            private string m_name;
-
-            private string m_description;
-
-            public PerformanceAdviserRuleId m_Id = new PerformanceAdviserRuleId(new Guid("BC38854474284491BD03795675AC7386"));
-
-            private FailureDefinitionId m_windowWarningId;
-
-            private FailureDefinition m_windowWarning;
-
-            public FlippedWindowCheck()
-            {
-                //Constructor. Completamos propiedades
-                m_name = "Comprobación. Ventanas volteadas";
-                m_description = "Regla para buscar cualquier ventana que esté volteada";
-                m_windowWarningId = new FailureDefinitionId(new Guid("25570B8FD4AD42baBD78469ED60FB9A3"));
-                m_windowWarning = FailureDefinition.CreateFailureDefinition(m_windowWarningId, FailureSeverity.Warning, "Algunas ventanas de este proyecto están volteadas.");
-            }
-
-            public void InitCheck(Document document)
-            {
-                //Creamos o reiniciamos la colección de ElementId
-                if (m_FlippedWindows == null) m_FlippedWindows = new List<ElementId>();
-                else m_FlippedWindows.Clear();
-                return;
-            }
-
-            public void ExecuteElementCheck(Document document, Element element)
-            {
-                //Si es FamilyInstance
-                if ((element is FamilyInstance familyInstance))
-                {
-                    //Sis es FacingFlipped lo añadimos a la lista
-                    if (familyInstance.FacingFlipped) m_FlippedWindows.Add(familyInstance.Id);
-                }
-            }
-
-            public void FinalizeCheck(Document document)
-            {
-                //Si hay ElementId en la coleccion 
-                if (m_FlippedWindows.Count > 0)
-                {
-                    //Creamos FailureMessage
-                    FailureMessage failureMessage = new FailureMessage(m_windowWarningId);
-                    //Asignamos lista de ElementId con falla
-                    failureMessage.SetFailingElements(m_FlippedWindows);
-
-                    //Definimos Transaction
-                    using (Transaction tx = new Transaction(document))
-                    {
-                        //Iniciamos Transaction
-                        tx.Start("Transaction ReglasPersonalizadas.Informe");
-
-                        PerformanceAdviser.GetPerformanceAdviser().PostWarning(failureMessage);
-
-                        //Confirmamos Transaction
-                        tx.Commit();
-                    }
-                    m_FlippedWindows.Clear();
-                }
-            }
-
-            public string GetDescription()
-            {
-                return m_description;
-            }
-
-            public ElementFilter GetElementFilter(Document document)
-            {
-                return new ElementCategoryFilter(BuiltInCategory.OST_Windows);
-            }
-
-            public string GetName()
-            {
-                return m_name;
-            }
-
-            public bool WillCheckElements()
-            {
-                return true;
-            }
-        }
-
-        public class RoofSelectionFilter : ISelectionFilter
-        {
-            Document document = null;
-            public RoofSelectionFilter(Document document)
-            {
-                this.document = document;
-            }
-            public bool AllowElement(Element element)
-            {
-                if (element is RoofBase)
-                {
-                    return true;
-                }
-                return false;
-            }
-
-            public bool AllowReference(Reference refer, XYZ point)
-            {
-                Element element = document.GetElement(refer.ElementId);
-                if (element is RoofBase) return true;
-
-                return false;
-            }
-        }
+        #region CrearSchema()
         internal static void CrearSchema(Element element, Guid guidSchema)
         {
 
@@ -5836,10 +5819,148 @@ namespace Apuntes_de_Csharp_Revit_API
             entity.Set<string>("TestFilterValue1", "Poner un valor");
             if (element != null) element.SetEntity(entity);
         }
-
+        #endregion
     }
 
+    // 1.1 -------------------------------------------- CLASES ADICIONALES ----------------------------------------------------
 
+    #region WallSelectionFilterEtiquetas
+    public class WallSelectionFilterEtiquetas : ISelectionFilter
+    {
+        public bool AllowElement(Element element)
+        {
+            //Solo admitimos la clase Wall
+            if (element is Wall)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool AllowReference(Reference refer, XYZ point)
+        {
+            return false;
+        }
+    }
+    #endregion
+
+    #region RoofSelectionFilter
+    public class RoofSelectionFilter : ISelectionFilter
+    {
+        Document document = null;
+        public RoofSelectionFilter(Document document)
+        {
+            this.document = document;
+        }
+        public bool AllowElement(Element element)
+        {
+            if (element is RoofBase)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool AllowReference(Reference refer, XYZ point)
+        {
+            Element element = document.GetElement(refer.ElementId);
+            if (element is RoofBase) return true;
+
+            return false;
+        }
+    }
+    #endregion
+
+    #region FlippedWindowCheck
+    public class FlippedWindowCheck : IPerformanceAdviserRule
+    {
+        private List<ElementId> m_FlippedWindows;
+
+        private string m_name;
+
+        private string m_description;
+
+        public PerformanceAdviserRuleId m_Id = new PerformanceAdviserRuleId(new Guid("BC38854474284491BD03795675AC7386"));
+
+        private FailureDefinitionId m_windowWarningId;
+
+        private FailureDefinition m_windowWarning;
+
+        public FlippedWindowCheck()
+        {
+            //Constructor. Completamos propiedades
+            m_name = "Comprobación. Ventanas volteadas";
+            m_description = "Regla para buscar cualquier ventana que esté volteada";
+            m_windowWarningId = new FailureDefinitionId(new Guid("25570B8FD4AD42baBD78469ED60FB9A3"));
+            m_windowWarning = FailureDefinition.CreateFailureDefinition(m_windowWarningId, FailureSeverity.Warning, "Algunas ventanas de este proyecto están volteadas.");
+        }
+
+        public void InitCheck(Document document)
+        {
+            //Creamos o reiniciamos la colección de ElementId
+            if (m_FlippedWindows == null) m_FlippedWindows = new List<ElementId>();
+            else m_FlippedWindows.Clear();
+            return;
+        }
+
+        public void ExecuteElementCheck(Document document, Element element)
+        {
+            //Si es FamilyInstance
+            if ((element is FamilyInstance familyInstance))
+            {
+                //Sis es FacingFlipped lo añadimos a la lista
+                if (familyInstance.FacingFlipped) m_FlippedWindows.Add(familyInstance.Id);
+            }
+        }
+
+        public void FinalizeCheck(Document document)
+        {
+            //Si hay ElementId en la coleccion 
+            if (m_FlippedWindows.Count > 0)
+            {
+                //Creamos FailureMessage
+                FailureMessage failureMessage = new FailureMessage(m_windowWarningId);
+                //Asignamos lista de ElementId con falla
+                failureMessage.SetFailingElements(m_FlippedWindows);
+
+                //Definimos Transaction
+                using (Transaction tx = new Transaction(document))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction ReglasPersonalizadas.Informe");
+
+                    PerformanceAdviser.GetPerformanceAdviser().PostWarning(failureMessage);
+
+                    //Confirmamos Transaction
+                    tx.Commit();
+                }
+                m_FlippedWindows.Clear();
+            }
+        }
+
+        public string GetDescription()
+        {
+            return m_description;
+        }
+
+        public ElementFilter GetElementFilter(Document document)
+        {
+            return new ElementCategoryFilter(BuiltInCategory.OST_Windows);
+        }
+
+        public string GetName()
+        {
+            return m_name;
+        }
+
+        public bool WillCheckElements()
+        {
+            return true;
+        }
+    }
+    #endregion
+
+    #region MyGraphicsService
     public class MyGraphicsService : ITemporaryGraphicsHandler
     {
         //Propiedad guid
@@ -5890,6 +6011,9 @@ namespace Apuntes_de_Csharp_Revit_API
             return _guid;
         }
     }
+    #endregion
+
+    #region BeamSeleccionFilter
     public class BeamSeleccionFilter : ISelectionFilter
     {
         public bool AllowElement(Element element)
@@ -5906,7 +6030,9 @@ namespace Apuntes_de_Csharp_Revit_API
             return false;
         }
     }
+    #endregion
 
+    #region OpcionesCargaFamiliasMin
     class OpcionesCargaFamiliasMin : IFamilyLoadOptions
     {
         public bool OnFamilyFound(bool familyInUse, out bool overwriteParameterValues)
@@ -5926,7 +6052,9 @@ namespace Apuntes_de_Csharp_Revit_API
         }
 
     }
+    #endregion
 
+    #region FiltroDeSeleccionDeMuros_1
     public class FiltroDeSeleccionDeMuros_1 : ISelectionFilter
     // Este filtro tendra la funcion de permitir la seleccion de muros que midan entre 3 y 8 metros.
     {
@@ -5961,7 +6089,9 @@ namespace Apuntes_de_Csharp_Revit_API
             return false;
         }
     }
+    #endregion
 
+    #region FiltroDeSeleccionDeCarasPlanas_1
 
     public class FiltroDeSeleccionDeCarasPlanas_1 : ISelectionFilter
     // Este filtro tendra la funcion de permitir la seleccion de muros que midan entre 3 y 8 metros.
@@ -5991,4 +6121,7 @@ namespace Apuntes_de_Csharp_Revit_API
             return false;
         }
     }
+    #endregion
+
 }
+
