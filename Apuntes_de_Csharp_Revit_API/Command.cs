@@ -1,11 +1,12 @@
 
 /* -------------------------------------------- INDICE --------------------------------------------
+    
+    0.0 IMPORTACIONES
 
     1.1 VARIABLES INICIALES
     1.2 TRABAJO CON VARIABLES "elements" y "message"
     1.3 TRABAJANDO CON TRANSACCION
-    1.4 TRABAJANDO "JournalingMode.UsingCommandData"
-    1.5 OBTENCIOND DE ELEMENTOS Y SUS Ids
+    1.4 OBTENCIOND DE ELEMENTOS Y SUS Ids
 
     2.0 SELECCION EN EL MODELO DE REVIT
 
@@ -31,12 +32,52 @@
     4.1 CREACION DE UN MURO.
     4.2 CREACION DE UN SUELO.
     4.3 MODIFICACION DEL SUELO
+    4.4 CREACION DE PLATAFORMAS DE NIVELACION.
+    4.5 CREACION DE CRISTALERAS
 
+    5.0 EDICION DE ELEMENTOS
+
+    5.1 MOVER ELEMENTOS
+    5.2 COPIAR ELEMENTOS
+    5.3 ROTAR ELEMENTOS
+    5.4 SIMETRIA
+    5.5 TRANSFORMAR ELEMENTOS
+    5.6 BORRADO DE ELEMENTOS
+
+    6.0 UNIDADES
+
+    6.1 CONVERSION DE UNIDADES
+
+    7.0 SYMBOLS, VISTAS, REGIONES, REVISIONES
+    7.1 SYMBOLS
+    7.2 FASES
+    7.3 VISTAS
+    7.4 REGIONES
+    7.5 REVISIONES
+
+    8.0 FILTROS
+
+    8.1 FILTROS
+
+    9.0 TASKDIALOG
+
+    10.0 TRANSACCIONES
+
+    11.0 VALORES GEOMETRICOS
+
+    12.0 ETIQUETAS, COTAS, TEXTOS
+
+    13.0 MATERIALES
+
+    14.0 ESQUEMAS
+
+    15.0 ARCHIVOS VINCULADOS
+
+    16.0 CORRECCION DE ERRORES
 
  */
 
-
-
+// 0.0 -------------------------------------- IMPORTACIONES -----------------------------------
 
 #region Namespaces - IMPORTACIONES
 using Autodesk.Revit.ApplicationServices;
@@ -52,6 +93,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
+using System.Reflection.Emit;
+using System.Security.Cryptography;
 
 #endregion
 
@@ -65,15 +109,12 @@ namespace Apuntes_de_Csharp_Revit_API
     public class Command : IExternalCommand // "IExternalCommand" es una interfaz de Revit, exige que este el metodo Excecute.
     {
         public Result Execute(
-          ExternalCommandData commandData,
-          ref string message,   // "message" es una variable que podemos modificar para ponerla en el mensaje de error
-                                // Se utiliza cunado retornamos "return Result.Failed" o "return Result.Cancelled"
-          ElementSet elements // Aca estan los elementos que han participado de un error
-            )
+        ExternalCommandData commandData,
+        ref string message,   // "message" es una variable que podemos modificar para ponerla en el mensaje de error
+                              // Se utiliza cunado retornamos "return Result.Failed" o "return Result.Cancelled"
+        ElementSet elements // Aca estan los elementos que han participado de un error
+        )
         {
-
-            #region
-            #endregion
 
             // 1.1 -------------------------------------------- VARIABLES INICIALES ----------------------------------------------------
 
@@ -115,11 +156,11 @@ namespace Apuntes_de_Csharp_Revit_API
 
             // 1.2 -------------------------------------- TRABAJO CON VARIABLES "elements" y "message" -----------------------------------
 
-            #region MODIFICACION DE message
+            #region 1.2.1 MODIFICACION DE message
             message = "Podemos cambiar el valor de 'message'";
             #endregion
 
-            #region COLECTOR DE MUROS BASICO
+            #region 1.2.2 COLECTOR DE MUROS BASICO
             try
             {
                 FilteredElementCollector Colector_Muros = new FilteredElementCollector(doc).
@@ -145,7 +186,7 @@ namespace Apuntes_de_Csharp_Revit_API
 
             // 1.3 ---------------------------------------------- TRABAJANDO CON TRANSACCION --------------------------------------------------
 
-            #region TRANSACCION BASICA - Es el menos "prolijo", ya que la estructura no es tan visual y nos puede hacer olvidar cerrar la transaccion
+            #region 1.3.1 TRANSACCION BASICA - Es el menos "prolijo", ya que la estructura no es tan visual y nos puede hacer olvidar cerrar la transaccion
             try
             {
                 // Modify document within a transaction
@@ -160,7 +201,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region TRANSACCION CON using - Mas prolijo, su estructura es mas visual y nos ayuda a recordar cerrar la transaccion.
+            #region 1.3.2 TRANSACCION CON using - Mas prolijo, su estructura es mas visual y nos ayuda a recordar cerrar la transaccion.
             try
             {
                 // Modify document within a transaction
@@ -179,9 +220,10 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // 1.5 ----------------------------------- OBTENCIOND DE ELEMENTOS Y SUS Ids ------------------------------------
+            // 1.4 ----------------------------------- OBTENCIOND DE ELEMENTOS, SUS Ids ------------------------------------
 
-            #region OBTENCION DE LOS TIPOS DE Id QUE EXISTEN EN REVIT
+            #region 1.4.1 OBTENCION DE LOS TIPOS DE Id QUE EXISTEN EN REVIT
+
             Selection seleccion_1 = uidoc.Selection; // agrega a "seleccion_1" las instancias seleccionadas.
             ElementId Elemento_1Id = seleccion_1.GetElementIds().FirstOrDefault(); // Obtiene el Id del primer elemento seleccionado.
             IList<ElementId> Lista_ElementosId = seleccion_1.GetElementIds().ToList(); // Obtiene todos los Ids de los elementos seleccionados.
@@ -200,11 +242,259 @@ namespace Apuntes_de_Csharp_Revit_API
             //En la API de Revit, una ICollection<T> es una interfaz que representa una colección de objetos del tipo T.
             //Es similar a una lista o un conjunto, pero con una interfaz más básica,
             //sin algunas de las funcionalidades avanzadas que tienen otras estructuras como List<T> o HashSet<T>.
+
             #endregion
+
+            // 1.5 ----------------------------------- CARACTERISTICAS GENERALES DE LOS Element ------------------------------------
+
+            #region 1.5.1 NOMBRES DE LOS Element
+            try
+            {
+                IList<Element> ListaDeElement = new List<Element>();
+                IList<string> CaracteristicasElement = new List<string>();
+
+                foreach (Element element in ListaDeElement)
+                {
+                    // NOMBRE
+                    CaracteristicasElement.Add(element.Name);
+
+                    // ID
+                    CaracteristicasElement.Add(element.Id.ToString());
+
+                    // TITULO DEL DOCUMENTO DEL ELEMENTO
+                    CaracteristicasElement.Add(element.Document.Title);
+
+                    //
+                    CaracteristicasElement.Add(element.DesignOption?.Name ?? "Sin opción de diseño");
+                    CaracteristicasElement.Add(element.CreatedPhaseId.ToString());
+                    CaracteristicasElement.Add(element.Document.ToString());
+
+                    // CATEGORIAS
+                    CaracteristicasElement.Add(element.Category?.Name ?? "Sin Category");
+                    CaracteristicasElement.Add(element.Category?.Id.ToString() ?? "Sin Category");
+                    CaracteristicasElement.Add(element.Category?.Material.ToString() ?? "Sin Category");
+                    CaracteristicasElement.Add(element.Category?.BuiltInCategory.ToString() ?? "Sin Category");
+                    CaracteristicasElement.Add(element.Category?.CategoryType.ToString() ?? "Sin Category");
+                    CaracteristicasElement.Add(element.Category?.Parent.ToString() ?? "Sin Category");
+
+                    // PARAMETROS - IMPORTANTE
+                    foreach (Parameter parametro in element.Parameters)
+                    {
+                        // Agregamos el nombre de la definición del parámetro a la lista
+                        CaracteristicasElement.Add(parametro.Definition.Name);
+                        CaracteristicasElement.Add(parametro.HasValue.ToString());
+                        CaracteristicasElement.Add(parametro.Id.ToString());
+                        CaracteristicasElement.Add(parametro.StorageType.ToString());
+                        CaracteristicasElement.Add(parametro.UserModifiable.ToString());
+
+                        Parameter param = element.LookupParameter(parametro.Definition.Name);
+                        if (param != null && param.StorageType == StorageType.Double)  // Aseguramos que sea un parámetro de tipo Double
+                        {
+                            double valor = param.AsDouble();
+                            Console.WriteLine(valor);
+
+                            // Si quieres agregarlo a la lista, puedes hacerlo aquí:
+                            CaracteristicasElement.Add(valor.ToString());
+                        }
+                    }
+
+                    // PARAMETROS - TIPO DE ALMACENAMIENTO
+                    foreach (Parameter parametro in element.Parameters)
+                    {
+                        // Verificamos el tipo de almacenamiento del parámetro
+                        if (parametro.StorageType == StorageType.Double)
+                        {
+                            CaracteristicasElement.Add("StorageType = Número fraccionario: " + element.LookupParameter(parametro.Definition.Name).AsDouble());
+                        }
+                        else if (parametro.StorageType == StorageType.String)
+                        {
+                            CaracteristicasElement.Add("StorageType = Texto: " + element.LookupParameter(parametro.Definition.Name).AsString());
+                        }
+                        else if (parametro.StorageType == StorageType.Integer)
+                        {
+                            CaracteristicasElement.Add("StorageType = Número redondo " + element.LookupParameter(parametro.Definition.Name).AsInteger());
+                        }
+                        else
+                        {
+                            Console.WriteLine("Tipo de parámetro no admitido");
+                        }
+                    }
+
+                    // LOOKUPPARAMETERS - LookupParameter
+
+                    // Inicializa la lista para almacenar los parámetros encontrados
+                    List<Parameter> lookupParameters = new List<Parameter>();
+
+                    // Itera sobre todos los parámetros del elemento
+                    foreach (Parameter parametro in element.Parameters)
+                    {
+                        // Verifica si el parámetro tiene un nombre definido
+                        if (!string.IsNullOrEmpty(parametro.Definition.Name))
+                        {
+                            // Agrega el parámetro a la lista si es un LookupParameter
+                            Parameter lookupParam = element.LookupParameter(parametro.Definition.Name);
+                            if (lookupParam != null)
+                            {
+                                lookupParameters.Add(lookupParam);
+                            }
+                        }
+                    }
+
+                    // Ahora puedes utilizar la lista 'lookupParameters' como desees
+                    foreach (Parameter lookupParam in lookupParameters)
+                    {
+                        CaracteristicasElement.Add($"Nombre del LookupParameter: {lookupParam.Definition.Name}");
+                    }
+
+
+                    // LOCALIZACION
+                    Location location = element.Location;
+                    if (location is LocationPoint locationPoint)
+                    {
+                        // LOCALIZACION BASADA EN UN PUNTO
+                        CaracteristicasElement.Add(locationPoint.Point.ToString());
+                    }
+                    else if (location is LocationCurve locationCurve)
+                    {
+                        // LOCALIZACION BASADA EN UNA CURVA
+                        CaracteristicasElement.Add(locationCurve.Curve.ToString());
+                    }
+
+                    // BOUNDINGBOX DEL ELEMENTO
+                    BoundingBoxXYZ boundingBox = element.get_BoundingBox(null);
+                    if (boundingBox != null)
+                    {
+                        CaracteristicasElement.Add($"Min: {boundingBox.Min.ToString()}, Max: {boundingBox.Max.ToString()}");
+                    }
+
+                    ElementType elementType = element.Document.GetElement(element.GetTypeId()) as ElementType;
+                    if (elementType != null)
+                    {
+                        CaracteristicasElement.Add(elementType.Name);
+                    }
+
+                    // MATERIALES
+                    if (element is FamilyInstance familyInstance)
+                    {
+                        Material material = familyInstance.Symbol.GetMaterialIds(false)
+                            .Select(id => element.Document.GetElement(id) as Material).FirstOrDefault();
+                        if (material != null)
+                        {
+                            CaracteristicasElement.Add(material.Name);
+                        }
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            #endregion
+            // falta subdividir
+
+            // 1.6 ----------------------------------- CATEGORIAS ------------------------------------
+
+            #region 1.6.1 CATEGORIAS
+            try
+            {
+                // Inicializamos la lista para almacenar las categorías
+                List<string> categorias = new List<string>();
+
+                // Iteramos sobre las categorías en la configuración del documento
+                foreach (Category Categoria in doc.Settings.Categories)
+                {
+                    // Agregamos el nombre de la categoría a la lista
+                    categorias.Add(Categoria.Name);
+                }
+
+                // Ordenamos la lista de categorías
+                categorias.Sort();
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+            // falta subdividir
 
             // 2.0 ----------------------------------- SELECCION EN EL MODELO DE REVIT ------------------------------------
 
-            #region 2.1 SELECCION LIBRE DEL PUNTO
+            // 2.1 ELEMENTOS PREVIAMENTE SELECCIONADOS EN EL MODELO
+
+            #region 2.1.1 ELEMENTOS SELECCIONADOS - Selection
+            try
+            {
+                Selection ElementoSeleccionado_1 = uidoc.Selection;
+                // Agrega a la variable "Selection" el objeto actualmente seleccionado.
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 2.1.2 ELEMENTO SELECCIONADO Ids - ICollection<ElementId>
+            try
+            {
+                ICollection<ElementId> ElementoSeleccionadoId_1 = uidoc.Selection.GetElementIds();
+
+                // ICollection < T >
+                // Es la interfaz más básica para trabajar con colecciones en.NET, y es más general que IList<T>.
+                // Proporciona funcionalidades mínimas, como contar elementos, verificar si un elemento está contenido,
+                // y agregar o eliminar elementos.
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 2.1.3 ELEMENTO SELECCIONADO Id - IList<ElementId>
+            try
+            {
+                // Requiere usar el metodo "ToList()"
+                IList<ElementId> ElementoSeleccionadoId_1 = uidoc.Selection.GetElementIds().ToList();
+
+                // IList < T >
+                // Es una interfaz más específica que hereda de ICollection<T> y, además de las funcionalidades que hereda,
+                // proporciona capacidades adicionales para manipular colecciones indexadas, es decir,
+                // colecciones en las que se pueden acceder a los elementos por su posición (índice).
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+            #endregion
+
+            #region 2.1.4 ELEMENTO SELECCIONADO - IList<Element>
+            try
+            {
+                IList<Element> ListaElementos = new List<Element>();
+
+                IList<ElementId> ElementoSeleccionadoId_1 = uidoc.Selection.GetElementIds().ToList();
+                foreach (ElementId ElementoId in ElementoSeleccionadoId_1)
+                {
+                    Element Elemento = uidoc.Document.GetElement(ElementoId);
+                    ListaElementos.Add(Elemento);
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+
+
+            #endregion
+
+            // 2.2 SELECCION DE PUNTOS - POR PUNTOS
+
+            #region 2.2.1 SELECCION LIBRE DEL PUNTO
             try // Para los metodos de seleccion es NECESARIO usar el Try Catch para cuando se apriete "escape" o no se seleccion por algun motivo.
             {
                 XYZ Punto_1 = uidoc.Selection.PickPoint(); // Selecciona un punto en la pantalla y almacena las coordenadas en "Punto_1"
@@ -220,7 +510,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.2 SELECCION CONDICIONADA DEL PUNTO
+            #region 2.2.2 SELECCION CONDICIONADA DEL PUNTO
             try
             {
                 ObjectSnapTypes SnapTypes_Objeto = ObjectSnapTypes.Endpoints | ObjectSnapTypes.Centers;
@@ -238,7 +528,94 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.3 SELECCION POR RECTANGULO "TODO INCLUIDO" y "TODO LO INCLUIDO Y CORTADO"
+            // 2.3 SELECCION DE ELEMENTOS - POR PUNTOS
+
+            #region 2.3.1 SELECCION PUNTUAL CON PickObject - Element
+            try
+            {
+                // Seleccionamos un elemento completo en el modelo.
+                // Lo que obtenemos aquí es una "Reference" que apunta a un "Element".
+                Reference ReferenciaPuntual_1 = uidoc.Selection.PickObject(ObjectType.Element, "Selecciona un elemento");
+
+                // Podemos obtener el elemento completo usando la "Reference" obtenida de la selección de un "Element".
+                // Hay dos maneras de hacerlo: usando el ElementId o directamente la Reference.
+
+                // Opción 1: Obtener el Element usando el ElementId de la referencia.
+                Element ElementoDesdeLaReferencia_1 = doc.GetElement(ReferenciaPuntual_1.ElementId);
+
+                // Opción 2: Obtener el Element directamente usando la Reference (internamente usa el ElementId).
+                Element ElementoDesdeLaReferencia_2 = doc.GetElement(ReferenciaPuntual_1);
+
+                // Ambas líneas anteriores devolverán el mismo Element, ya que Reference.ElementId apunta al mismo elemento.
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 2.3.2 SELECCION PUNTUAL CON PickObject - Edge
+            try
+            {
+                // Seleccionamos una arista (Edge) de un elemento en el modelo.
+                // Lo que obtenemos aquí también es una "Reference", pero esta vez la referencia apunta a una arista específica del elemento.
+                Reference ReferenciaPuntual_2 = uidoc.Selection.PickObject(ObjectType.Edge, "Selecciona una arista");
+
+                // Cuando seleccionamos una arista, la referencia apunta a una parte específica del elemento.
+                // Podemos obtener el elemento completo desde la referencia de la arista.
+                Element ElementoDesdeLaArista = doc.GetElement(ReferenciaPuntual_2.ElementId);
+
+                // Ahora tenemos acceso a la arista específica del elemento, a través de la referencia.
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 2.3.3 SELECCIONAMOS VARIOS ELEMENTOS - SIN FUNCION FLECHA.
+            try
+            {
+                IList<Reference> Referencias_1 = uidoc.Selection.PickObjects(ObjectType.Element, "Selecciona varios elementos");
+                // Obtenemos una lista de referencias, pero estas referencias son a Elements.
+
+                // Primera manera de agregar los Element a una lista, sin funcion flecha.
+                List<Element> ListaElements_1 = new List<Element>();
+                foreach (Reference Referencia in Referencias_1)
+                {
+                    // Obtenemos el Element a partir de la referencia y accedemos a su nombre
+                    Element elemento = doc.GetElement(Referencia.ElementId);
+
+                    // Agregamos el nombre del elemento a la lista
+                    ListaElements_1.Add(elemento);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 2.3.4 SELECCIONAMOS VARIOS ELEMENTOS - CON FUNCION FLECHA.
+            try
+            {
+                IList<Reference> Referencias_2 = uidoc.Selection.PickObjects(ObjectType.Element, "Selecciona varios elementos");
+                // Obtenemos una lista de referencias, pero estas referencias son a Elements.
+
+                // Segunda manera de agregar los Element a una lista, con funcion flecha.
+                List<Element> ListaElements_2 = Referencias_2.Select(Referencia => doc.GetElement(Referencia.ElementId)).ToList();
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 2.4 SELECCION DE PUNTOS - POR RECTANGULOS
+
+            #region 2.4.1 CREACION DE 4 PUNTOS A TRAVES DE PickBox(), A TRAVES DE LA SELECCION POR RECTANGULO
             try
             {
                 PickedBox SeleccionPorRectangulo_1 = uidoc.Selection.PickBox(PickBoxStyle.Directional, "Seleccion esquinas");
@@ -257,7 +634,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.4 CREACION DE UN CurveArray A TRAVES DE UN PickBox
+            #region 2.4.2 CREACION DE 4 Line Y UN CurveArray O CurveLoop A TRAVES DE UN PickBox().
             try
             {
                 PickedBox SeleccionPorRectangulo_2 = uidoc.Selection.PickBox(PickBoxStyle.Directional, "Seleccion esquinas");
@@ -299,40 +676,13 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.5 SELECCION PUNTUAL CON PickObject
+            // 2.5 SELECCION DE ELEMENTOS - POR RECTANGULOS
+
+            #region 2.5.1 SELECCION POR RECTANGULO "PickElementsByRectangle()"
             try
             {
-                // Seleccionamos un elemento completo en el modelo.
-                // Lo que obtenemos aquí es una "Reference" que apunta a un "Element".
-                Reference ReferenciaPuntual_1 = uidoc.Selection.PickObject(ObjectType.Element, "Selecciona un elemento");
-
-                // Seleccionamos una arista (Edge) de un elemento en el modelo.
-                // Lo que obtenemos aquí también es una "Reference", pero esta vez la referencia apunta a una arista específica del elemento.
-                Reference ReferenciaPuntual_2 = uidoc.Selection.PickObject(ObjectType.Edge, "Selecciona una arista");
-
-                // Podemos obtener el elemento completo usando la "Reference" obtenida de la selección de un "Element".
-                // Hay dos maneras de hacerlo: usando el ElementId o directamente la Reference.
-
-                // Opción 1: Obtener el Element usando el ElementId de la referencia.
-                Element ElementoDesdeLaReferencia_1 = doc.GetElement(ReferenciaPuntual_1.ElementId);
-
-                // Opción 2: Obtener el Element directamente usando la Reference (internamente usa el ElementId).
-                Element ElementoDesdeLaReferencia_2 = doc.GetElement(ReferenciaPuntual_1);
-
-                // Ambas líneas anteriores devolverán el mismo Element, ya que Reference.ElementId apunta al mismo elemento.
-
-                // Cuando seleccionamos una arista, la referencia apunta a una parte específica del elemento.
-                // Podemos obtener el elemento completo desde la referencia de la arista.
-                Element ElementoDesdeLaArista = doc.GetElement(ReferenciaPuntual_2.ElementId);
-
-                // Obtener el objeto geométrico (GeometryObject) desde la referencia.
-                // En este caso, obtenemos la arista (Edge) a la que hace referencia.
-                GeometryObject ObjetoGeometrico_1 = ElementoDesdeLaReferencia_1.GetGeometryObjectFromReference(ReferenciaPuntual_2);
-
-                // Convertimos el GeometryObject a una arista (Edge), que es lo que seleccionamos.
-                Edge Element_Borde_1 = ObjetoGeometrico_1 as Edge;
-
-                // Ahora tenemos acceso a la arista específica del elemento, a través de la referencia.
+                // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de Element.
+                IList<Element> SeleccionDeMurosFiltrados_2 = uidoc.Selection.PickElementsByRectangle();
             }
             catch (Exception ex)
             {
@@ -340,96 +690,14 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.6 SELECCIONAMOS VARIOS ELEMENTOS - USO DE FUNCION FLECHA.
-            try
-            {
-                IList<Reference> Referencias_1 = uidoc.Selection.PickObjects(ObjectType.Element, "Selecciona varios elementos");
-                // Obtenemos una lista de referencias, pero estas referencias son a Elements.
-
-                // Primera manera de agregar los Element a una lista, sin funcion flecha.
-                List<string> ListaElements_1 = new List<string>(); // Inicializar la lista de strings
-                foreach (Reference Referencia in Referencias_1)
-                {
-                    // Obtenemos el Element a partir de la referencia y accedemos a su nombre
-                    Element elemento = doc.GetElement(Referencia.ElementId);
-
-                    // Agregamos el nombre del elemento a la lista
-                    ListaElements_1.Add(elemento.Name);
-                }
-
-                // Segunda manera de agregar los Element a una lista, con funcion flecha.
-                List<string> ListaElements_2 = Referencias_1.Select(Referencia => doc.GetElement(Referencia.ElementId).Name).ToList();
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            #region 2.7 SELECCION CON FILTROS - El filtro esta en una clase nueva llamada "FiltroDeSeleccionDeMuros_1"
+            #region 2.5.2 SELECCION POR RECTANGULO "PickElementsByRectangle()" Y FILTRO
             try
             {
                 // Creamos una instancia de filtro usando una clase de filtro ya creada
-                ISelectionFilter FiltroDeSeleccionDeMuro_1 = new FiltroDeSeleccionDeMuros_1();
-
-                // Seleccionamos un muro usando la instancia del filtro creada, y obtenemos la referencia del mismo.
-                Reference SeleccionDeMuroFiltrado_1 = uidoc.Selection.
-                    PickObject(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione un muro");
-                // Obtenemos el Element desde la referencia
-                Element ElementoSeleccionado_1 = doc.GetElement(SeleccionDeMuroFiltrado_1.ElementId);
-
-                // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de referencias.
-                IList<Reference> SeleccionDeMurosFiltrados_2 = uidoc.Selection.
-                    PickObjects(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione muros");
-
-                // Obtenemos una lista de Element desde la lista de Reference
-                IList<Element> ListaDeElementos = new List<Element>();
-                foreach (Reference Referencia in SeleccionDeMurosFiltrados_2)
-                {
-                    Element ElementoSeleccionado_2 = doc.GetElement(Referencia.ElementId);
-                    ListaDeElementos.Add(ElementoSeleccionado_2);
-                }
-            }
-            catch (Exception ex) 
-            { 
-                message = ex.ToString(); 
-            }
-            #endregion
-
-            #region 2.8 SELECCION CON FILTROS - Filtramos caras planas y mostramos su nombre y area.
-            try
-            {
-                ISelectionFilter FiltroDeCarasPlanas_1 = new FiltroDeSeleccionDeCarasPlanas_1(uidoc.Document);
-                // El filtro esta definido en una nueva clase llamada "FiltroDeSeleccionDeCarasPlanas_1"
-
-                Reference CarasDeReferencia = uidoc.Selection.PickObject(ObjectType.Face, FiltroDeCarasPlanas_1, "Seleccione caras");
-                if (CarasDeReferencia != null)
-                {
-                    // Obtenemos el elemento y la cara del elemento.
-                    Element Elemento = doc.GetElement(CarasDeReferencia.ElementId);
-                    GeometryObject GeometriaDelElemento = Elemento.GetGeometryObjectFromReference(CarasDeReferencia);
-                    Face Cara = GeometriaDelElemento as Face;
-
-                    // Mostramos el nombre y el area del elemento.
-                    TaskDialog.Show("Superficie seleccionada", "Nombre del elemento: " + Elemento.Name + "\n"
-                        + "Area del elemento" + Cara.Area.ToString());
-                }
-            }
-            catch(Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            #region 2.9 SELECCION POR RECTANGULO "PickElementsByRectangle"
-            try
-            {
-                // Creamos una instancia de filtro usando una clase de filtro ya creada
-                ISelectionFilter FiltroDeSeleccionDeMuro_1 = new FiltroDeSeleccionDeMuros_1();
+                ISelectionFilter Filtro_1 = new FiltroDeSeleccionDeMuros_1();
 
                 // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de Element.
-                IList<Element> SeleccionDeMurosFiltrados_2 = uidoc.Selection.
-                    PickElementsByRectangle(FiltroDeSeleccionDeMuro_1, "Seleccione muros");
+                IList<Element> SeleccionDeMurosFiltrados_2 = uidoc.Selection.PickElementsByRectangle(Filtro_1, "Seleccione ...");
             }
             catch (Exception ex)
             {
@@ -437,7 +705,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.10 SELECCIONAR ELEMENTOS CON PickObjects Y FILTRO - Permite seleccionar por rectangulo
+            #region 2.5.2 SELECCIONAR ELEMENTOS CON PickObjects Y FILTRO - Permite seleccionar por rectangulo
             try
             {
                 ISelectionFilter selectionFilter = new FiltroDeSeleccionDeMuros_1();
@@ -506,6 +774,63 @@ namespace Apuntes_de_Csharp_Revit_API
                 return Result.Succeeded;
             }
             catch( Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 2.6 SELECCION CON FILTROS
+
+            #region 2.7 SELECCION CON FILTROS - El filtro esta en una clase nueva llamada "FiltroDeSeleccionDeMuros_1"
+            try
+            {
+                // Creamos una instancia de filtro usando una clase de filtro ya creada
+                ISelectionFilter FiltroDeSeleccionDeMuro_1 = new FiltroDeSeleccionDeMuros_1();
+
+                // Seleccionamos un muro usando la instancia del filtro creada, y obtenemos la referencia del mismo.
+                Reference SeleccionDeMuroFiltrado_1 = uidoc.Selection.
+                    PickObject(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione un muro");
+                // Obtenemos el Element desde la referencia
+                Element ElementoSeleccionado_1 = doc.GetElement(SeleccionDeMuroFiltrado_1.ElementId);
+
+                // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de referencias.
+                IList<Reference> SeleccionDeMurosFiltrados_2 = uidoc.Selection.
+                    PickObjects(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione muros");
+
+                // Obtenemos una lista de Element desde la lista de Reference
+                IList<Element> ListaDeElementos = new List<Element>();
+                foreach (Reference Referencia in SeleccionDeMurosFiltrados_2)
+                {
+                    Element ElementoSeleccionado_2 = doc.GetElement(Referencia.ElementId);
+                    ListaDeElementos.Add(ElementoSeleccionado_2);
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 2.8 SELECCION CON FILTROS - Filtramos caras planas y mostramos su nombre y area.
+            try
+            {
+                ISelectionFilter FiltroDeCarasPlanas_1 = new FiltroDeSeleccionDeCarasPlanas_1(uidoc.Document);
+                // El filtro esta definido en una nueva clase llamada "FiltroDeSeleccionDeCarasPlanas_1"
+
+                Reference CarasDeReferencia = uidoc.Selection.PickObject(ObjectType.Face, FiltroDeCarasPlanas_1, "Seleccione caras");
+                if (CarasDeReferencia != null)
+                {
+                    // Obtenemos el elemento y la cara del elemento.
+                    Element Elemento = doc.GetElement(CarasDeReferencia.ElementId);
+                    GeometryObject GeometriaDelElemento = Elemento.GetGeometryObjectFromReference(CarasDeReferencia);
+                    Face Cara = GeometriaDelElemento as Face;
+
+                    // Mostramos el nombre y el area del elemento.
+                    TaskDialog.Show("Superficie seleccionada", "Nombre del elemento: " + Elemento.Name + "\n"
+                        + "Area del elemento" + Cara.Area.ToString());
+                }
+            }
+            catch (Exception ex)
             {
                 message = ex.ToString();
             }
@@ -1317,24 +1642,64 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // 4.6 BORRADO DE ELEMENTOS
-
-            #region BORRAR LOS ELEMENTOS SELECCIONADOS
+            #region OBTENER NIVELES
             try
             {
-                //Accedemos con algún objetos seleccionado
+                // Access current selection
+
                 Selection sel = uidoc.Selection;
-                //creamos una Transaction
-                using (Transaction tx = new Transaction(doc))
+
+                ICollection<ElementId> elementIdsList = sel.GetElementIds();
+                if (elementIdsList.Count != 1)
                 {
-                    //Iniciamos Transaction
-                    tx.Start("Borrar elementos");
-                    //Borramos los objetos
-                    doc.Delete(sel.GetElementIds());
-                    //Confirmamos la Transaction
-                    tx.Commit();
+                    message = "Debe selecionar solo un elemento Wall.";
+                    return Result.Failed;
                 }
-                TaskDialog.Show("Revit API Manual", "Elementos borrados");
+                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is Wall wall)
+                {
+                    Level level = doc.GetElement(wall.LevelId) as Level;
+                    string msg = string.Empty;
+
+
+                    //obtenenos el nombre
+                    msg = msg + ("\nNombre del nivel: " + level.Name);
+
+                    //obtenemos la elevación sobre el origen de coordenadas
+                    msg = msg + ("\nElevación sobre el origen de coordenadas (unidades internas): " + level.Elevation.ToString("N2"));
+
+                    // obtenemos la elevación sobre el proyecto
+                    msg = msg + ("\nElevación sobre el proyecto (unidades internas): " + level.ProjectElevation.ToString("N2"));
+
+                    // obtenemos la vista asociada, si existe
+                    ElementId elementId = level.FindAssociatedPlanViewId();
+                    if (elementId != ElementId.InvalidElementId)
+                        msg = msg + ("\nVista asociada: " + doc.GetElement(elementId).Name);
+                    else
+                        msg = msg + ("\n\tNo existe vista asociada");
+
+                    //Obtenemos el tipo y buscamos se Base de elevación
+                    LevelType levelType = doc.GetElement(level.GetTypeId()) as LevelType;
+                    msg = msg + ("\n\n\"Base de elevación\" del tipo: " +
+                        levelType.get_Parameter(BuiltInParameter.LEVEL_RELATIVE_BASE_TYPE).AsValueString());
+
+                    //Solo en versiones 2020 y posteriores
+                    double cotaParaBuscarNivel = -0.55; //en unidades internas
+                                                        //Obtenemos el nivel mas cercano a la cota cotaParaBuscarNivel
+                    ElementId id = Level.GetNearestLevelId(doc, cotaParaBuscarNivel, out double diferencia);
+                    Level nivelCercano = doc.GetElement(id) as Level;
+                    //Obtenemos el nivel y tambien la diferencia de cotas en unidades internas
+                    msg = msg + ("\n\nEl nivel mas cercano a la cota (uninades internas): " + cotaParaBuscarNivel +
+                        " es: " + nivelCercano.Name +
+                        "\nLa diferencia de cota es (uninades internas): " + diferencia.ToString("N2"));
+
+                    //Mostramos toda la información
+                    TaskDialog.Show("Manual Revit API", msg);
+                }
+                else
+                {
+                    message = "Debe selecionar un ejemplar de Wall.";
+                    return Result.Failed;
+                }
             }
             catch (Exception ex)
             {
@@ -1342,9 +1707,180 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // 4.7 EDICION DE ELEMENTOS.
+            #region CREAR NIVELES
+            try
+            {
 
-            #region CAMBIAR LA UBICACION DE UN ELEMENTO, EN ESTE CASO, UNA COLUMNA QUE ESTA BASADO EN UN PUNTO - USAMOS MoveElement EN EL Id DE LA FAMILIA
+                // Selección actual
+                Selection sel = uidoc.Selection;
+
+                ICollection<ElementId> elementIdsList = sel.GetElementIds();
+                //Cpmprobamos que solo tenemos 1 objeto seleccionado
+                if (elementIdsList.Count != 1)
+                {
+                    message = "Debe selecionar solo un elemento Wall.";
+                    return Result.Failed;
+                }
+                //Chequeamos si es Wall y almacenamos en wall.
+                //Si no es Wall continuamos
+                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is Wall wall)
+                {
+                    BoundingBoxXYZ boundingBoxXYZ = null;
+                    BoundingBoxXYZ boundingBoxXYZView = null;
+
+                    //Obtenemos del muro el boundingBoxXYZ
+                    boundingBoxXYZ = wall.get_BoundingBox(null);
+
+                    //Obtenemos el nivel del muro
+                    Level level = doc.GetElement(wall.LevelId) as Level;
+                    // obtenemos la vista asociada, si existe
+                    ElementId elementId = level.FindAssociatedPlanViewId();
+                    if (elementId != ElementId.InvalidElementId)
+                    {
+                        View viewLevel = doc.GetElement(elementId) as View;
+                        boundingBoxXYZView = wall.get_BoundingBox(viewLevel);
+                    }
+
+                    // La elevación la ponemos en la semi suma de las Zs del boundingBoxXYZ
+                    double elevation = (boundingBoxXYZ.Max.Z + boundingBoxXYZ.Min.Z) / 2;
+                    double elevationView = (boundingBoxXYZView.Max.Z + boundingBoxXYZView.Min.Z) / 2;
+
+                    // Creamos el nivel. Usamos transaction
+                    using (Transaction tx = new Transaction(doc))
+                    {
+                        tx.SetName("Creación de Nivel");
+                        tx.Start();
+                        Level levelGeom = Level.Create(doc, elevation);
+                        Level levelView = Level.Create(doc, elevationView);
+
+                        // Cambiamos el nombre
+                        levelGeom.Name = "Nivel medio (muro)";
+                        levelView.Name = "Nivel medio (vista)";
+
+                        tx.Commit();
+                    }
+
+                }
+                else
+                {
+                    message = "Debe selecionar un ejemplar de Wall.";
+                    return Result.Failed;
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region CREAR REGILLAS
+            try
+            {
+                //Creamos una lista de curves
+                List<Curve> curves = new List<Curve>();
+
+                //Creamos 4 Line y las añadimos a la lista
+                curves.Add(Line.CreateBound(new XYZ(-18, -20, 0), new XYZ(-18, 20, 0)));
+                curves.Add(Line.CreateBound(new XYZ(18, -20, 0), new XYZ(18, 20, 0)));
+                curves.Add(Line.CreateBound(new XYZ(20, -18, 0), new XYZ(-20, -18, 0)));
+                curves.Add(Line.CreateBound(new XYZ(20, 18, 0), new XYZ(-20, 18, 0)));
+
+                using (Transaction tx = new Transaction(doc, "Crear Grids"))
+                {
+                    tx.Start();
+                    //Para cada Line creamos una Grid
+                    foreach (Line line in curves)
+                        Grid.Create(doc, line);
+                    tx.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region OBTENEMOS INFORMACION DE LA REGILLA DE UNA COLUMNA
+            try
+            {
+
+                //Selección actual
+                Selection sel = uidoc.Selection;
+
+                ICollection<ElementId> elementIdsList = sel.GetElementIds();
+                if (elementIdsList.Count != 1)
+                {
+                    message = "Debe selecionar solo un elemento Pilar structural.";
+                    return Result.Failed;
+                }
+                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is FamilyInstance pilar
+                    //además de ser Familiinstance debe tener categoría OST_StructuralColumns
+                    && pilar.Category.Id.IntegerValue == (int)BuiltInCategory.OST_StructuralColumns)
+                {
+                    string marca = pilar.get_Parameter(BuiltInParameter.COLUMN_LOCATION_MARK).AsString();
+                    // Doble Split, primero seleccionamos rejilla, y despues el nombre sin el desfase
+                    string nombreRejilla = marca.Split('-')[0].Split('(')[0];
+                    if (String.IsNullOrEmpty(nombreRejilla))
+                    {
+                        message = "El Pilar estructural no está asociado a ninguna rejilla.";
+                        return Result.Failed;
+                    }
+                    // Filtramos para obtener Grids del proyecto
+                    FilteredElementCollector col = new FilteredElementCollector(doc);
+                    ICollection<Element> grids = col.OfClass(typeof(Grid)).ToElements();
+
+                    // Obtenemos la primera y unica rejilla que cumple
+                    Grid grid = grids.Where(x => x.Name == nombreRejilla).FirstOrDefault() as Grid;
+
+                    string msg = "Rejilla : " + grid.Name;
+
+                    // Obtenenos si es arco
+                    msg += "\nLa rejilla es Arc: " + grid.IsCurved;
+
+                    // Obtenemos la Curve
+                    Autodesk.Revit.DB.Curve curve = grid.Curve;
+                    if (grid.IsCurved)
+                    {
+                        //Si es Arc, obtenemos centro y radio
+                        Autodesk.Revit.DB.Arc arc = curve as Autodesk.Revit.DB.Arc;
+                        msg += "\nRadio del Arc: " + arc.Radius;
+                        msg += "\nCentro del Arc:  (" + XYZString(arc.Center);
+                    }
+                    else
+                    {
+                        // Si es Line, obtenemos longitud
+                        Autodesk.Revit.DB.Line line = curve as Autodesk.Revit.DB.Line;
+                        msg += "\nLongitud de la Line: " + line.Length;
+                    }
+                    // Punto inicial
+                    msg += "\nPunto inicial: " + XYZString(curve.GetEndPoint(0));
+                    // Punto final
+                    msg += "\nPunto final: " + XYZString(curve.GetEndPoint(1));
+
+                    // Punto inicial
+                    XYZString(curve.Tessellate()[0]);
+                    // Punto final
+                    XYZString(curve.Tessellate()[1]);
+
+                    TaskDialog.Show("Manual Revit API", msg);
+                }
+                else
+                {
+                    message = "Debe selecionar un ejemplar de Pilar estructural.";
+                    return Result.Failed;
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 5.0 ----------------------------------- EDICION DE ELEMENTOS ------------------------------------
+
+            // 5.1 MOVER ELEMENTOS
+
+            #region CAMBIAR LA UBICACION DE UN ELEMENTO, EN ESTE CASO, UNA COLUMNA QUE ESTA BASADO EN UN LocationPoint - USAMOS MoveElement EN EL Id DE LA FAMILIA
             try
             {
 
@@ -1469,9 +2005,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // Movemos en este caso la "LocationCurve"
-
-            #region CAMBIAMOS LA UBICACION MOVIENDO UNA LocationCurve USANDO Move()
+            #region CAMBIAMOS LA UBICACION MOVIENDO UNA LocationCurve DE UN MURO USANDO Move()
             try
             {
 
@@ -1526,11 +2060,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // En este caso creamos una linea y hacemos que la location curve sea igual que la linea creada, es otro metodo diferente.
-            // Podemos usar este metodo para torcer un poco las cosas, creando location curves inclinadas en Z,
-            // pero el resultado es inestable.
-
-            #region
+            #region REDEFINIMOS LA LOCATION CURVE DE UN MURO USANDO UNA LINEA PREVIAMENTE CREADA
             try
             {
 
@@ -1591,9 +2121,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // Copiar elementos
+            // 5.2 COPIAR ELEMENTOS
 
-            #region
+            #region COPIAR ELEMENTOS
             try
             {
 
@@ -1643,10 +2173,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // ROTAR ELEMENTOS
-            // Rotamos elementos segun un eje creado con un "CreateUnbound". En este caso el eje pasa por el centro de la viga.
+            // 5.3 ROTAR ELEMENTOS
 
-            #region
+            #region ROTAR ELEMENTOS SEGUN UN EJE. ESTE SE CREA CON UN "CreateUnbound", QUE PASA POR EL EJE DE LA VIGA.
             try
             {
                 //Creamos una Reference para poder seleccionar la viga
@@ -1715,8 +2244,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // ROTAR ELEMENTO SEGUN UN PLANO INCLINADO
-            #region
+            #region ROTAR ELEMENTO SEGUN UN PLANO INCLINADO
             try
             {
 
@@ -1833,8 +2361,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // SIMETRIA A UN PLANO
-            #region
+            //  5.4 SIMETRIA
+
+            #region SIMETRIA A UN PLANO
             try
             {
                 // Accedemos a la selección actual
@@ -1890,8 +2419,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREACION DE MATRICES
-            #region
+            #region CREACION DE MATRICES
             try
             {
                 // Accedemos a la selección actual
@@ -1942,8 +2470,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // TRANSFORMAR ELEMENTOS
-            #region
+            // 5.5 TRANSFORMAR ELEMENTOS
+
+            #region TRANSFORMAR ELEMENTOS
             try
             {
                 //Creamos cuatro puntos cuadricula 10*10
@@ -2001,8 +2530,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // TRANSFORMAR DESDE UNA VISTA 3D
-            #region
+            #region TRANSFORMAR DESDE UNA VISTA 3D
             try
             {
 
@@ -2079,8 +2607,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // ALINEAR ELEMENTOS
-            #region
+            #region ALINEAR ELEMENTOS
             try
             {
 
@@ -2142,12 +2669,159 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
+            // 5.6 BORRADO DE ELEMENTOS
 
+            #region BORRAR LOS ELEMENTOS SELECCIONADOS
+            try
+            {
+                //Accedemos con algún objetos seleccionado
+                Selection sel = uidoc.Selection;
+                //creamos una Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Borrar elementos");
+                    //Borramos los objetos
+                    doc.Delete(sel.GetElementIds());
+                    //Confirmamos la Transaction
+                    tx.Commit();
+                }
+                TaskDialog.Show("Revit API Manual", "Elementos borrados");
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
 
+            // 6.0 ----------------------------------- UNIDADES ------------------------------------
 
+            // 6.1 CONVERSION DE UNIDADES
 
-            #region FAMILIAS
-            // CARGAR UN SYMBOL EN ESPECIFICO -  RAPI 8-10
+            #region CONVERSION DE UNIDADES
+            try
+            {
+                // Access current selection
+                Selection sel = uidoc.Selection;
+
+                ICollection<ElementId> elementIdsList = sel.GetElementIds();
+                if (elementIdsList.Count != 1)
+                {
+                    message = "Debe selecionar solo un elemento Wall.";
+                    return Result.Failed;
+                }
+                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is Wall wall)
+                {
+                    //Obtenemos altura inicial del muro
+                    double alturaInicialInterna =
+                        wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).AsDouble();
+                    double alturaInicialMetros = UnitUtils.ConvertFromInternalUnits(alturaInicialInterna,
+                        UnitTypeId.Meters /*DisplayUnitType.DUT_METERS*/);
+                    string msg = "El muro tiene una altura inicial de \"" + alturaInicialMetros + "\" metros, sin redondeos";
+                    TaskDialog.Show("Manual Revit API", msg);
+
+                    // --------------------------------------------
+                    using (Transaction tx = new Transaction(doc))
+                    {
+                        //Como modificamos el documento debemos abrir Transaction
+                        tx.Start("Modificar altura muro");
+                        //multiplicamos altura * 2.15 
+                        double nuevaAlturaMetros = alturaInicialMetros * 2.15;
+                        //Convertir a unidades internas. 
+                        double nuevaAlturaInterna = UnitUtils.ConvertToInternalUnits(nuevaAlturaMetros
+                            , UnitTypeId.Meters /*DisplayUnitType.DUT_METERS*/);
+                        //Actualizamos el parámetro del muro con el nuevo valor
+                        wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).Set(nuevaAlturaInterna);
+                        tx.Commit();
+                        msg = "El muro tiene ahora una altura de \"" + nuevaAlturaInterna + "\"" +
+                            ", unidades internas, sin redondeos.";
+                        TaskDialog.Show("Manual Revit API", msg);
+                    }
+                    
+                    // ---------------------------------------------
+
+                    //2 convertir string a numero
+                    string alturaTxtMetros = wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).AsValueString();
+                    //Obtenemos la configuración actual de unidades del Document
+                    Units units = doc.GetUnits();
+                    ValueParsingOptions valueParsingOptions = new ValueParsingOptions();
+
+                    bool parsed = UnitFormatUtils.TryParse(units, SpecTypeId.Length /*UnitType.UT_Length*/, alturaTxtMetros
+                      /* "10 imposible"*/, valueParsingOptions, out double valorConvertidoDesdeString, out message);
+
+                    if (parsed == false)
+                    {
+                        message = "Introducir texto correcto en metros";
+                        return Result.Failed;
+                    }
+                    msg = string.Format("El string con formato: \"{0}\", se ha convertido al valor double: \"{1}\""
+                        , alturaTxtMetros, valorConvertidoDesdeString);
+                    TaskDialog.Show("Manual Revit API", msg);
+
+                    // ---------------------------------------------
+
+                    //Convertir numero a string con el formato de unidades, tomado desde las Units del document
+                    //Debe tener en Revit "Simbolo de unidad" y "Usar agrupacion de cifras"
+
+                    //Creamos un valor inventado grande, para poder generar agrupación de cifras
+                    double valorInventado = 30000;
+                    //Con agrupación de mumeros (punto de millar)
+                    string stringConAgrupacion = UnitFormatUtils.Format(units,
+                        SpecTypeId.Length /*UnitType.UT_Length*/, valorInventado, /*false,*/ false);
+
+                    //Sin agrupación de mumeros (punto de millar)
+                    string stringSinAgrupacion = UnitFormatUtils.Format(units,
+                        SpecTypeId.Length /*UnitType.UT_Length*/, valorInventado, /*false,*/ true);
+
+                    msg = string.Format("Numero inventado convertido a unidades actuales.\n\nString con agrupación: \"{0}\",\nString sin agrupación: \"{1}\""
+                        , stringConAgrupacion, stringSinAgrupacion);
+
+                    TaskDialog.Show("Manual Revit API", msg);
+
+                    // ---------------------------------------------
+
+                    FormatOptions formatoptions = new FormatOptions();
+                    formatoptions = units.GetFormatOptions(SpecTypeId.Length /*UnitType.UT_Length*/);
+                    //Asignamos unidades
+                    //formatoptions.DisplayUnits = DisplayUnitType.DUT_CENTIMETERS;
+                    formatoptions.SetUnitTypeId(UnitTypeId.Centimeters);
+                    //Asignamos simbolo
+                    //formatoptions.UnitSymbol = UnitSymbolType.UST_CM;
+                    formatoptions.SetSymbolTypeId(SymbolTypeId.Cm);
+                    FormatValueOptions formatValueOptions = new FormatValueOptions();
+
+                    formatValueOptions.SetFormatOptions(formatoptions);
+
+                    string stringConAgrupacionMod = UnitFormatUtils.Format(units, SpecTypeId.Length,
+                        valorConvertidoDesdeString, false, formatValueOptions);
+
+                    //string stringConAgrupacionMod = UnitFormatUtils.Format(units, UnitType.UT_Length,
+                    //valorConvertidoDesdeString, false, false, formatValueOptions);
+
+                    msg = string.Format("Valor double: \"{0}\" unidades internas \nModificadas a Centimetros: \"{1}\"",
+                        valorConvertidoDesdeString, stringConAgrupacionMod);
+
+                    TaskDialog.Show("Manual Revit API", msg);
+
+                }
+                else
+                {
+                    message = "Debe selecionar un ejemplar de Wall.";
+                    return Result.Failed;
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 7.0 ----------------------------------- SYMBOLS, VISTAS, REGIONES, REVISIONES ------------------------------------
+
+            // 7.1 SYMBOLS
+
+            #region CARGAR UN SYMBOL EN ESPECIFICO
+            //
             try
             {
 
@@ -2238,369 +2912,9 @@ namespace Apuntes_de_Csharp_Revit_API
 
             #endregion
 
-            // CONVERSION DE UNIDADES
-            #region
-            try
-            {
-                // Access current selection
-                Selection sel = uidoc.Selection;
+            // 7.2 FASES
 
-                ICollection<ElementId> elementIdsList = sel.GetElementIds();
-                if (elementIdsList.Count != 1)
-                {
-                    message = "Debe selecionar solo un elemento Wall.";
-                    return Result.Failed;
-                }
-                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is Wall wall)
-                {
-                    #region Convertir desde unidades internas
-                    //Obtenemos altura inicial del muro
-                    double alturaInicialInterna =
-                        wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).AsDouble();
-                    double alturaInicialMetros = UnitUtils.ConvertFromInternalUnits(alturaInicialInterna, 
-                        UnitTypeId.Meters /*DisplayUnitType.DUT_METERS*/);
-                    string msg = "El muro tiene una altura inicial de \"" + alturaInicialMetros + "\" metros, sin redondeos";
-                    TaskDialog.Show("Manual Revit API", msg);
-                    #endregion
-
-                    #region converir a unidades internas
-                    using (Transaction tx = new Transaction(doc))
-                    {
-                        //Como modificamos el documento debemos abrir Transaction
-                        tx.Start("Modificar altura muro");
-                        //multiplicamos altura * 2.15 
-                        double nuevaAlturaMetros = alturaInicialMetros * 2.15;
-                        //Convertir a unidades internas. 
-                        double nuevaAlturaInterna = UnitUtils.ConvertToInternalUnits(nuevaAlturaMetros
-                            , UnitTypeId.Meters /*DisplayUnitType.DUT_METERS*/);
-                        //Actualizamos el parámetro del muro con el nuevo valor
-                        wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).Set(nuevaAlturaInterna);
-                        tx.Commit();
-                        msg = "El muro tiene ahora una altura de \"" + nuevaAlturaInterna + "\"" +
-                            ", unidades internas, sin redondeos.";
-                        TaskDialog.Show("Manual Revit API", msg);
-                    }
-                    #endregion
-
-                    #region Convertir string a numero Revit 
-                    //2 convertir string a numero
-                    string alturaTxtMetros = wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).AsValueString();
-                    //Obtenemos la configuración actual de unidades del Document
-                    Units units = doc.GetUnits();
-                    ValueParsingOptions valueParsingOptions = new ValueParsingOptions();
-
-                    bool parsed = UnitFormatUtils.TryParse(units, SpecTypeId.Length /*UnitType.UT_Length*/, alturaTxtMetros
-                      /* "10 imposible"*/, valueParsingOptions, out double valorConvertidoDesdeString, out message);
-
-                    if (parsed == false)
-                    {
-                        message = "Introducir texto correcto en metros";
-                        return Result.Failed;
-                    }
-                    msg = string.Format("El string con formato: \"{0}\", se ha convertido al valor double: \"{1}\""
-                        , alturaTxtMetros, valorConvertidoDesdeString);
-                    TaskDialog.Show("Manual Revit API", msg);
-                    #endregion
-
-                    #region Convertir un numero Revit a string
-                    //Convertir numero a string con el formato de unidades, tomado desde las Units del document
-                    //Debe tener en Revit "Simbolo de unidad" y "Usar agrupacion de cifras"
-
-                    //Creamos un valor inventado grande, para poder generar agrupación de cifras
-                    double valorInventado = 30000;
-                    //Con agrupación de mumeros (punto de millar)
-                    string stringConAgrupacion = UnitFormatUtils.Format(units,
-                        SpecTypeId.Length /*UnitType.UT_Length*/, valorInventado, /*false,*/ false);
-
-                    //Sin agrupación de mumeros (punto de millar)
-                    string stringSinAgrupacion = UnitFormatUtils.Format(units,
-                        SpecTypeId.Length /*UnitType.UT_Length*/, valorInventado, /*false,*/ true);
-
-                    msg = string.Format("Numero inventado convertido a unidades actuales.\n\nString con agrupación: \"{0}\",\nString sin agrupación: \"{1}\""
-                        , stringConAgrupacion, stringSinAgrupacion);
-
-                    TaskDialog.Show("Manual Revit API", msg);
-                    #endregion
-
-                    #region Convertir un numero Revit a string b)
-                    FormatOptions formatoptions = new FormatOptions();
-                    formatoptions = units.GetFormatOptions(SpecTypeId.Length /*UnitType.UT_Length*/);
-                    //Asignamos unidades
-                    //formatoptions.DisplayUnits = DisplayUnitType.DUT_CENTIMETERS;
-                    formatoptions.SetUnitTypeId(UnitTypeId.Centimeters);
-                    //Asignamos simbolo
-                    //formatoptions.UnitSymbol = UnitSymbolType.UST_CM;
-                    formatoptions.SetSymbolTypeId(SymbolTypeId.Cm);
-                    FormatValueOptions formatValueOptions = new FormatValueOptions();
-
-                    formatValueOptions.SetFormatOptions(formatoptions);
-
-                    string stringConAgrupacionMod = UnitFormatUtils.Format(units, SpecTypeId.Length, 
-                        valorConvertidoDesdeString, false, formatValueOptions);
-
-                    //string stringConAgrupacionMod = UnitFormatUtils.Format(units, UnitType.UT_Length,
-                    //valorConvertidoDesdeString, false, false, formatValueOptions);
-
-                    msg = string.Format("Valor double: \"{0}\" unidades internas \nModificadas a Centimetros: \"{1}\"",
-                        valorConvertidoDesdeString, stringConAgrupacionMod);
-
-                    TaskDialog.Show("Manual Revit API", msg);
-                    #endregion
-
-                }
-                else
-                {
-                    message = "Debe selecionar un ejemplar de Wall.";
-                    return Result.Failed;
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-
-            // OBTENER NIVELES
-            #region
-            try
-            {
-                // Access current selection
-
-                Selection sel = uidoc.Selection;
-
-                ICollection<ElementId> elementIdsList = sel.GetElementIds();
-                if (elementIdsList.Count != 1)
-                {
-                    message = "Debe selecionar solo un elemento Wall.";
-                    return Result.Failed;
-                }
-                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is Wall wall)
-                {
-                    Level level = doc.GetElement(wall.LevelId) as Level;
-                    string msg = string.Empty;
-
-
-                    //obtenenos el nombre
-                    msg = msg + ("\nNombre del nivel: " + level.Name);
-
-                    //obtenemos la elevación sobre el origen de coordenadas
-                    msg = msg + ("\nElevación sobre el origen de coordenadas (unidades internas): " + level.Elevation.ToString("N2"));
-
-                    // obtenemos la elevación sobre el proyecto
-                    msg = msg + ("\nElevación sobre el proyecto (unidades internas): " + level.ProjectElevation.ToString("N2"));
-
-                    // obtenemos la vista asociada, si existe
-                    ElementId elementId = level.FindAssociatedPlanViewId();
-                    if (elementId != ElementId.InvalidElementId)
-                        msg = msg + ("\nVista asociada: " + doc.GetElement(elementId).Name);
-                    else
-                        msg = msg + ("\n\tNo existe vista asociada");
-
-                    //Obtenemos el tipo y buscamos se Base de elevación
-                    LevelType levelType = doc.GetElement(level.GetTypeId()) as LevelType;
-                    msg = msg + ("\n\n\"Base de elevación\" del tipo: " +
-                        levelType.get_Parameter(BuiltInParameter.LEVEL_RELATIVE_BASE_TYPE).AsValueString());
-
-                    //Solo en versiones 2020 y posteriores
-                    double cotaParaBuscarNivel = -0.55; //en unidades internas
-                                                        //Obtenemos el nivel mas cercano a la cota cotaParaBuscarNivel
-                    ElementId id = Level.GetNearestLevelId(doc, cotaParaBuscarNivel, out double diferencia);
-                    Level nivelCercano = doc.GetElement(id) as Level;
-                    //Obtenemos el nivel y tambien la diferencia de cotas en unidades internas
-                    msg = msg + ("\n\nEl nivel mas cercano a la cota (uninades internas): " + cotaParaBuscarNivel +
-                        " es: " + nivelCercano.Name +
-                        "\nLa diferencia de cota es (uninades internas): " + diferencia.ToString("N2"));
-
-                    //Mostramos toda la información
-                    TaskDialog.Show("Manual Revit API", msg);
-                }
-                else
-                {
-                    message = "Debe selecionar un ejemplar de Wall.";
-                    return Result.Failed;
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // CREAR NIVELES
-            #region
-            try
-            {
-
-                // Selección actual
-                Selection sel = uidoc.Selection;
-
-                ICollection<ElementId> elementIdsList = sel.GetElementIds();
-                //Cpmprobamos que solo tenemos 1 objeto seleccionado
-                if (elementIdsList.Count != 1)
-                {
-                    message = "Debe selecionar solo un elemento Wall.";
-                    return Result.Failed;
-                }
-                //Chequeamos si es Wall y almacenamos en wall.
-                //Si no es Wall continuamos
-                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is Wall wall)
-                {
-                    BoundingBoxXYZ boundingBoxXYZ = null;
-                    BoundingBoxXYZ boundingBoxXYZView = null;
-
-                    //Obtenemos del muro el boundingBoxXYZ
-                    boundingBoxXYZ = wall.get_BoundingBox(null);
-
-                    //Obtenemos el nivel del muro
-                    Level level = doc.GetElement(wall.LevelId) as Level;
-                    // obtenemos la vista asociada, si existe
-                    ElementId elementId = level.FindAssociatedPlanViewId();
-                    if (elementId != ElementId.InvalidElementId)
-                    {
-                        View viewLevel = doc.GetElement(elementId) as View;
-                        boundingBoxXYZView = wall.get_BoundingBox(viewLevel);
-                    }
-
-                    // La elevación la ponemos en la semi suma de las Zs del boundingBoxXYZ
-                    double elevation = (boundingBoxXYZ.Max.Z + boundingBoxXYZ.Min.Z) / 2;
-                    double elevationView = (boundingBoxXYZView.Max.Z + boundingBoxXYZView.Min.Z) / 2;
-
-                    // Creamos el nivel. Usamos transaction
-                    using (Transaction tx = new Transaction(doc))
-                    {
-                        tx.SetName("Creación de Nivel");
-                        tx.Start();
-                        Level levelGeom = Level.Create(doc, elevation);
-                        Level levelView = Level.Create(doc, elevationView);
-
-                        // Cambiamos el nombre
-                        levelGeom.Name = "Nivel medio (muro)";
-                        levelView.Name = "Nivel medio (vista)";
-
-                        tx.Commit();
-                    }
-
-                }
-                else
-                {
-                    message = "Debe selecionar un ejemplar de Wall.";
-                    return Result.Failed;
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // CREAR REGILLAS
-            #region
-            try
-            {
-                //Creamos una lista de curves
-                List<Curve> curves = new List<Curve>();
-
-                //Creamos 4 Line y las añadimos a la lista
-                curves.Add(Line.CreateBound(new XYZ(-18, -20, 0), new XYZ(-18, 20, 0)));
-                curves.Add(Line.CreateBound(new XYZ(18, -20, 0), new XYZ(18, 20, 0)));
-                curves.Add(Line.CreateBound(new XYZ(20, -18, 0), new XYZ(-20, -18, 0)));
-                curves.Add(Line.CreateBound(new XYZ(20, 18, 0), new XYZ(-20, 18, 0)));
-
-                using (Transaction tx = new Transaction(doc, "Crear Grids"))
-                {
-                    tx.Start();
-                    //Para cada Line creamos una Grid
-                    foreach (Line line in curves)
-                        Grid.Create(doc, line);
-                    tx.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // OBTENEMOS INFORMACION DE LA REGILLA DE UNA COLUMNA
-            #region
-            try
-            {
-
-                //Selección actual
-                Selection sel = uidoc.Selection;
-
-                ICollection<ElementId> elementIdsList = sel.GetElementIds();
-                if (elementIdsList.Count != 1)
-                {
-                    message = "Debe selecionar solo un elemento Pilar structural.";
-                    return Result.Failed;
-                }
-                else if (doc.GetElement(elementIdsList.FirstOrDefault()) is FamilyInstance pilar
-                    //además de ser Familiinstance debe tener categoría OST_StructuralColumns
-                    && pilar.Category.Id.IntegerValue == (int)BuiltInCategory.OST_StructuralColumns)
-                {
-                    string marca = pilar.get_Parameter(BuiltInParameter.COLUMN_LOCATION_MARK).AsString();
-                    // Doble Split, primero seleccionamos rejilla, y despues el nombre sin el desfase
-                    string nombreRejilla = marca.Split('-')[0].Split('(')[0];
-                    if (String.IsNullOrEmpty(nombreRejilla))
-                    {
-                        message = "El Pilar estructural no está asociado a ninguna rejilla.";
-                        return Result.Failed;
-                    }
-                    // Filtramos para obtener Grids del proyecto
-                    FilteredElementCollector col = new FilteredElementCollector(doc);
-                    ICollection<Element> grids = col.OfClass(typeof(Grid)).ToElements();
-
-                    // Obtenemos la primera y unica rejilla que cumple
-                    Grid grid = grids.Where(x => x.Name == nombreRejilla).FirstOrDefault() as Grid;
-
-                    string msg = "Rejilla : " + grid.Name;
-
-                    // Obtenenos si es arco
-                    msg += "\nLa rejilla es Arc: " + grid.IsCurved;
-
-                    // Obtenemos la Curve
-                    Autodesk.Revit.DB.Curve curve = grid.Curve;
-                    if (grid.IsCurved)
-                    {
-                        //Si es Arc, obtenemos centro y radio
-                        Autodesk.Revit.DB.Arc arc = curve as Autodesk.Revit.DB.Arc;
-                        msg += "\nRadio del Arc: " + arc.Radius;
-                        msg += "\nCentro del Arc:  (" + XYZString(arc.Center);
-                    }
-                    else
-                    {
-                        // Si es Line, obtenemos longitud
-                        Autodesk.Revit.DB.Line line = curve as Autodesk.Revit.DB.Line;
-                        msg += "\nLongitud de la Line: " + line.Length;
-                    }
-                    // Punto inicial
-                    msg += "\nPunto inicial: " + XYZString(curve.GetEndPoint(0));
-                    // Punto final
-                    msg += "\nPunto final: " + XYZString(curve.GetEndPoint(1));
-
-                    // Punto inicial
-                    XYZString(curve.Tessellate()[0]);
-                    // Punto final
-                    XYZString(curve.Tessellate()[1]);
-
-                    TaskDialog.Show("Manual Revit API", msg);
-                }
-                else
-                {
-                    message = "Debe selecionar un ejemplar de Pilar estructural.";
-                    return Result.Failed;
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // FASES - INTENTAMOS CAMBIAR UN OBJETO DE FASE
-            #region
+            #region CAMBIAR UN OBJETO DE FASE
             try
             {
 
@@ -2685,8 +2999,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // OPCIONES DE DISEÑO
-            #region
+            // 7.3 VISTAS
+
+            #region OPCIONES DE DISEÑO
             try
             {
 
@@ -2732,8 +3047,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // OBTENER DATOS DE LA VISTA ACTUAL
-            #region
+            #region OBTENER DATOS DE LA VISTA ACTUAL
             try
             {
                 // Obtenemos la vista actual
@@ -2758,8 +3072,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREAR VISTA 3D
-            #region
+            #region CREAR VISTA 3D
             try
             {
                 // Access current selection
@@ -2795,8 +3108,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // DUPLICAR VISTA 3D - SE PUEDE DUPLICAR COMO DEPENDIENTE - Video RAPI 11-3
-            #region
+            #region DUPLICAR VISTA 3D - SE PUEDE DUPLICAR COMO DEPENDIENTE
             try
             {
                 //Obtenemos la vista actual
@@ -2840,170 +3152,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // MANIPULACION DE REGIONES DE RECORTE
-            #region
-            try
-            {
-
-                //Solo admitimos vista en planta
-                if (uidoc.ActiveView is ViewPlan view)
-                {
-                    //Creamos nuevo CurveLoop
-                    CurveLoop loop = new CurveLoop();
-                    //Creamos 6 XYZ
-                    XYZ xYZ0 = new XYZ(30, 20, 0);
-                    XYZ xYZ1 = new XYZ(30, -20, 0);
-                    XYZ xYZ2 = new XYZ(-10, -20, 0);
-                    XYZ xYZ3 = new XYZ(-10, -10, 0);
-                    XYZ xYZ4 = new XYZ(-30, -10, 0);
-                    XYZ xYZ5 = new XYZ(-30, 20, 0);
-
-                    //Añadimos 6 Line ordenadasu orientadas al CurveLoop
-                    loop.Append(Line.CreateBound(xYZ0, xYZ1));
-                    loop.Append(Line.CreateBound(xYZ1, xYZ2));
-                    loop.Append(Line.CreateBound(xYZ2, xYZ3));
-                    loop.Append(Line.CreateBound(xYZ3, xYZ4));
-                    loop.Append(Line.CreateBound(xYZ4, xYZ5));
-                    loop.Append(Line.CreateBound(xYZ5, xYZ0));
-
-                    //Creamos Transaction
-                    using (Transaction tx = new Transaction(doc))
-                    {
-                        //Iniciamos Transaction
-                        tx.Start("Transaction Region recorte");
-
-                        //Accedemos a la region
-                        ViewCropRegionShapeManager vcrShapeMgr = view.GetCropRegionShapeManager();
-                        //Asignamos la region
-                        vcrShapeMgr.SetCropShape(loop);
-
-                        //Activamos recorte y visibilidad
-                        view.CropBoxActive = true;
-                        view.CropBoxVisible = true;
-
-                        //Confirmamos Transaction
-                        tx.Commit();
-                    }
-                }
-                else
-                {
-                    message = "Solo vista en planta";
-                    return Result.Cancelled;
-                }
-
-                //Mensaje final
-                TaskDialog.Show("Manual Revit API", "Region de recorte creada");
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // DIVIDIR UNA REGION DE RECORTE EN SECCIONES.
-            // NECESITAMOS PRIMERO "RESTAURAR" LA REGION DE RECORTE, PARA LUEGO SUBDIVIDIRLA.
-            // PODEMOS DIVIDIR UNA SUBDIVISION SUCESIVAMENTE.
-            #region
-            try
-            {
-                //Solo admitimos vista en planta
-                if (uidoc.ActiveView is ViewPlan view)
-                {
-                    //Creamos Transaction
-                    using (Transaction tx = new Transaction(doc))
-                    {
-                        //Iniciamos Transaction
-                        tx.Start("Transaction Region recorte");
-
-                        //Accedemos a la region
-                        ViewCropRegionShapeManager vcrShapeMgr = view.GetCropRegionShapeManager();
-
-                        //Eliminamos regiones poligonales
-                        vcrShapeMgr.RemoveCropRegionShape();
-
-                        //Dividimos la region
-                        vcrShapeMgr.SplitRegionHorizontally(0, 0.4, 0.6);
-
-                        //Activamos recorte y visibilidad
-                        view.CropBoxActive = true;
-                        view.CropBoxVisible = true;
-
-                        //Confirmamos Transaction
-                        tx.Commit();
-                    }
-                }
-                else
-                {
-                    message = "Solo vista en planta";
-                    return Result.Cancelled;
-                }
-
-                //Mensaje final
-                TaskDialog.Show("Manual Revit API", "Region de recorte dividida");
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // MANIPULACION DE LOS MODOS TEMPORALES DE LAS VISTAS
-            #region
-            try
-            {
-
-                //Vista actual
-                View view = uidoc.ActiveView;
-
-                //Creamos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction modos temporales");
-
-                    //Obtenemos los modos temporales
-                    TemporaryViewModes viewModes = view.TemporaryViewModes;
-
-                    if (viewModes == null)
-                    {
-                        message = "La vista no soporta modos temporales";
-                        return Result.Cancelled;
-                    }
-                    else if (doc.IsFamilyDocument) //Si es FamilyDocument podemos acceder a PreviewFamilyVisibilityMode
-                    {
-                        // Los modos debe ser viables y estar habilitado
-                        if (viewModes.IsModeAvailable(TemporaryViewMode.PreviewFamilyVisibility) && viewModes.IsModeEnabled(TemporaryViewMode.PreviewFamilyVisibility))
-                        {
-                            //El estado debe ser viable
-                            if (viewModes.IsValidState(PreviewFamilyVisibilityMode.On))
-                            {
-                                viewModes.PreviewFamilyVisibility = PreviewFamilyVisibilityMode.On;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // Los modos debe ser viables y estar habilitado
-                        if (viewModes.IsModeEnabled(TemporaryViewMode.RevealHiddenElements) && viewModes.IsModeAvailable(TemporaryViewMode.RevealHiddenElements))
-                        {
-                            viewModes.RevealHiddenElements = true;
-                        }
-                    };
-
-                    //Confirmamos Transaction
-                    tx.Commit();
-                }
-                //Mensaje final
-                TaskDialog.Show("Manual Revit API", "Modos cambiados");
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // MANIPULACION DE LA ATENUACION LEJANA DE UNA VISTA
-            #region
+            #region MANIPULACION DE LA ATENUACION LEJANA DE UNA VISTA
             try
             {
 
@@ -3048,260 +3197,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREAR REVISIONES
-            #region
-            try
-            {
-
-                //Creamos 4 puntos 
-                XYZ xYZ0 = XYZ.Zero;
-                XYZ xYZ1 = new XYZ(0, 20, 0);
-                XYZ xYZ2 = new XYZ(20, 20, 0);
-                XYZ xYZ3 = new XYZ(20, 0, 0);
-
-                //Creamos lista de curves para nube de revisión
-                IList<Curve> curves = new List<Curve>();
-                curves.Add(Line.CreateBound(xYZ0, xYZ1));
-                curves.Add(Line.CreateBound(xYZ1, xYZ2));
-                curves.Add(Line.CreateBound(xYZ2, xYZ3));
-                curves.Add(Line.CreateBound(xYZ3, xYZ0));
-
-                //Creamos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction revisiones");
-
-                    //Creamos 3 Revision
-                    AddNewRevision(doc, "Descripción de ejemplo 1", "Supervisor 1", "Arquitecto 1");
-                    AddNewRevision(doc, "Descripción de ejemplo 2", "Supervisor 1", "Arquitecto 2");
-                    Revision revision = AddNewRevision(doc, "Descripción de ejemplo 3", "Supervisor 1", "Arquitecto 3");
-
-                    if (!(doc.ActiveView is View3D) && revision.Issued == false)
-                    {
-                        //Creamos nube de revisión
-                        RevisionCloud.Create(doc, doc.ActiveView, revision.Id, curves);
-                    }
-
-                    //Confirmamos Transaction
-                    tx.Commit();
-                }
-
-                //Mensaje final
-                TaskDialog.Show("Manual Revit API", "Revisiones creadas");
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // COMBINAR LAS NUVES DE REVISION
-            #region
-            try
-            {
-
-                //Obtenemos todas las Revisions
-                List<Revision> revisions = Revision.GetAllRevisionIds(doc).Select(x => doc.GetElement(x)).Cast<Revision>().ToList();
-
-                // Solo se pueden fusion las NO emitidas
-                // Seleccionamos solamente NO emitidas
-                revisions = revisions.Where(x => x.Issued == false).ToList();
-
-                //Para combinar necesitas >1
-                if (revisions.Count < 2)
-                {
-                    message = "Al menos necesitamos 2 Revisiones sin emitir";
-                    return Result.Cancelled;
-                }
-
-                //Obtenemos la ultima
-                Revision revision = revisions.LastOrDefault();
-                string revisionId = revision.Id.IntegerValue.ToString();
-                //Obtenemos revision previa
-                Revision previousRevision = revisions.ElementAt(revisions.Count - 2);
-
-                //Creamos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction Combinar revisión");
-
-                    //Combinamos ultima con previa. obtenemos RevisionCloud
-                    ISet<ElementId> revisionCloudIds = Revision.CombineWithPrevious(doc, revision.Id);
-
-                    //Número de RevisionClouds existentes en la última
-                    int movedClouds = revisionCloudIds.Count;
-                    //Si la ultima tenia RevisionCloud
-                    if (movedClouds > 0)
-                    {
-                        //Obtenemios primer RevisionCloud
-                        RevisionCloud cloud = doc.GetElement(revisionCloudIds.ElementAt(0)) as RevisionCloud;
-                        if (cloud != null)
-                        {
-                            string msg = string.Format("La Revision {0} se ha borrado y {1} RevisionCloud añadidos a la Revision {2}",
-                                revisionId, movedClouds, cloud.RevisionId.ToString());
-                            TaskDialog.Show("Manual Revit API", msg);
-                        }
-                    }
-                    //Confirmamos Transaction
-                    tx.Commit();
-                    TaskDialog.Show("Manual Revit API", "Combinacion terminada");
-
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // TRABAJO CON FILTROS - FILTROS DE VISUALIZACION PARA APLICAR EN UNA VISTA
-            #region
-            try
-            {
-
-                //Obtenemos vista actual
-                View view = uidoc.ActiveView;
-
-                // Creamos ub filtro de clase Floor
-                FilteredElementCollector collector = new FilteredElementCollector(doc).OfClass(typeof(Floor));
-                ICollection<ElementId> elementIds = collector.ToElementIds();
-
-                //Creamos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction Filtro selección");
-
-                    // Creamos filtro y asignamos los Floor
-                    SelectionFilterElement filterElement = SelectionFilterElement.Create(doc, "Filtro para Floor");
-                    filterElement.SetElementIds(elementIds);
-
-                    ElementId filterId = filterElement.Id;
-
-                    // Añadimos el filtro a la View
-                    view.AddFilter(filterId);
-
-                    //Por norma general debemos regenerar para visualizar el filtro
-                    doc.Regenerate();
-
-                    //Obtenemos configuración de gráficos
-                    OverrideGraphicSettings overrideSettings = view.GetFilterOverrides(filterId);
-
-                    //Cambiamos la configuración de gráficos existente a color azul
-                    overrideSettings.SetProjectionLineColor(new Color(0x00, 0x00, 0xFF));
-
-                    //Sobreescribimos en el filtro en la vista, la configuración de gráficos
-                    view.SetFilterOverrides(filterId, overrideSettings);
-
-                    //Confirmamos Transaction
-                    tx.Commit();
-                }
-
-                TaskDialog.Show("API Revit Manual", "Filtro añadido");
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // AGREGAMOS REGLAS A LOS FILTROS
-            // LOS ELEMENTOS ESTRUCTURALES DESAPARECEN DE LA VISTA
-            #region
-            try
-            {
-                //Obtenemos la vista actual
-                View view = uidoc.ActiveView;
-
-                //Creamos una coleccion con las categorias que deseamos filtrar. Walls
-                ISet<ElementId> categories = new HashSet<ElementId>() { new ElementId(BuiltInCategory.OST_Walls) };
-
-                //Creamos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction Filtro reglas");
-
-                    //Obtenemos el parametro Uso Estructura 0 = no es estructura, > 0 = si es estructura
-                    ElementId exteriorParamId = new ElementId(BuiltInParameter.WALL_STRUCTURAL_USAGE_PARAM);
-                    //Creamos el filtro de ElementParameterFilter
-                    ElementParameterFilter filter = new ElementParameterFilter(ParameterFilterRuleFactory.CreateGreaterRule(exteriorParamId, 0));
-
-                    // Creamos filtro asociado a las categorías de entrada (Wall)
-                    if (ParameterFilterElement.ElementFilterIsAcceptableForParameterFilterElement(doc, categories, filter))
-                    {
-                        ParameterFilterElement parameterFilterElement = ParameterFilterElement.Create(doc, "Filtro muros estructurales", categories);
-                        parameterFilterElement.SetElementFilter(filter);
-                        // Aplicamos filtro a la vista
-                        view.AddFilter(parameterFilterElement.Id);
-                        //Los objetos incluidos NO son visibles
-                        view.SetFilterVisibility(parameterFilterElement.Id, false);
-                    }
-                    else
-                    {
-                        message = "El filtro no puede usarse";
-                        return Result.Cancelled;
-                    }
-                    //Confirmamos Transaction
-                    tx.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // MODIFICACION DE FILTROS - CAMBIAMOS EL COLOR DE LOS FILTROS - RAPI 11-12
-            #region
-            try
-            {
-
-                //Obtenemos la vista actual
-                View view = uidoc.ActiveView;
-                // Find any filter with overrides setting cut color to Red
-
-                //Obtenemos los filtros de la vista actual
-                foreach (ElementId filterId in view.GetFilters())
-                {
-                    //Obtenemos configuración de gráficos
-                    OverrideGraphicSettings overrideSettings = view.GetFilterOverrides(filterId);
-                    //Obtenemos el color de las lineas de proyección
-                    Color lineColor = overrideSettings.ProjectionLineColor;
-                    //Si no tiene color 
-                    if (!lineColor.IsValid || lineColor == Color.InvalidColorValue)
-                        continue;
-
-                    // Si el color es azul, lo cambiamos a verde
-                    if (lineColor.Red == 0x00 && lineColor.Green == 0x00 && lineColor.Blue == 0xFF)
-                    {
-                        overrideSettings.SetProjectionLineColor(new Color(0x00, 0xFF, 0x00));
-
-                        //Crteamos Transaction
-                        using (Transaction tx = new Transaction(doc))
-                        {
-                            //Iniciamos Transaction
-                            tx.Start("Transaction Name");
-
-                            //Sobrescribimos en la vista, para el filtro seleccionado la configuración
-                            view.SetFilterOverrides(filterId, overrideSettings);
-
-                            //Confirmamos Transaction
-                            tx.Commit();
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // AJUSTE DEL ZOOM EN VISTA ACTUAL
-            #region
+            #region AJUSTE DEL ZOOM EN VISTA ACTUAL
             try
             {
                 //Obtenemos la UIView que coincide con la vista actual
@@ -3316,8 +3212,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // DESPLAZAR OBJETOS SOLAMENTE EN LA VISTA - UTIL PARA ARMAR POSIBLES ENSAMBLADOS VISUALES.
-            #region
+            #region DESPLAZAR OBJETOS SOLAMENTE EN LA VISTA - UTIL PARA ARMAR POSIBLES ENSAMBLADOS VISUALES.
             try
             {
 
@@ -3376,12 +3271,10 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // GRAFICOS TEMPORALES - INCORPORA GRAFICOS VMP
-            // Requiere la imagen .bmp en el proyecto. Debo profundizar en esto para entenderlo bien
-            #region
+            #region GRAFICOS TEMPORALES - INCORPORA GRAFICOS VMP
             try
             {
-
+                // Requiere la imagen .bmp en el proyecto. Debo profundizar en esto para entenderlo bien
                 //Generamos un Guid
                 Guid nGuid = Guid.NewGuid();
 
@@ -3436,8 +3329,502 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREAR TASKDIALOG MAS COMPLEJOS
-            #region
+            // 7.4 REGIONES
+
+            #region CREAR REGIONES
+            try
+            {
+
+                //Filtramos los niveles, metodo abreviado. Filtro de clase
+                FilteredElementCollector col = new FilteredElementCollector(doc).OfClass(typeof(Level));
+                //Seleccionamos el primer nivel de la colección
+                Level level = col.First() as Level;
+
+                //Creamos 4 puntos en planta. Cuadricula 10*10
+                XYZ xYZ0 = XYZ.Zero;
+                XYZ xYZ1 = new XYZ(10, 0, 0);
+                XYZ xYZ2 = new XYZ(10, 10, 0);
+                XYZ xYZ3 = new XYZ(0, 10, 0);
+
+                //Creamos un vector de desplazamiento. a 45 º
+                XYZ desfase = new XYZ(15, 15, 0);
+
+                //Creamos 4 puntos en planta. Cuadricula 10*10
+                XYZ xYZ5 = XYZ.Zero + desfase;
+                XYZ xYZ6 = xYZ1 + desfase;
+                XYZ xYZ7 = xYZ2 + desfase;
+                XYZ xYZ8 = xYZ3 + desfase;
+
+                //Creamos primer conjunto de Curves
+                Curve c0 = Line.CreateBound(xYZ0, xYZ1);
+                Curve c1 = Line.CreateBound(xYZ1, xYZ2);
+                Curve c2 = Line.CreateBound(xYZ2, xYZ3);
+                Curve c3 = Line.CreateBound(xYZ3, xYZ0);
+
+                //Creamos segundo conjunto de Curves
+                Curve c4 = Line.CreateBound(xYZ5, xYZ6);
+                Curve c5 = Line.CreateBound(xYZ6, xYZ7);
+                Curve c6 = Line.CreateBound(xYZ7, xYZ8);
+                Curve c7 = Line.CreateBound(xYZ8, xYZ5);
+
+                //Creamos primer CurveLoop 
+                CurveLoop profileA = new CurveLoop();
+                profileA.Append(c0);
+                profileA.Append(c1);
+                profileA.Append(c2);
+                profileA.Append(c3);
+
+                //Creamos segundo CurveLoop 
+                CurveLoop profileB = new CurveLoop();
+                profileB.Append(c4);
+                profileB.Append(c5);
+                profileB.Append(c6);
+                profileB.Append(c7);
+
+                //Creamos una lista de CurveLoop
+                List<CurveLoop> curveLoops = new List<CurveLoop>() { profileA, profileB };
+                //Obtenemos el ElementType por defecto
+                //No es posible crear region de mascara
+                ElementId id = doc.GetDefaultElementTypeId(ElementTypeGroup.FilledRegionType);
+                //Creamos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction región");
+                    //Creamos la región
+                    FilledRegion filledRegion = FilledRegion.Create(doc, id, uidoc.ActiveView.Id, curveLoops);
+                    //Obtenemos las DetailCurve del contorno
+                    IList<ElementId> idsCurves = filledRegion.GetDependentElements(new ElementClassFilter(typeof(CurveElement)));
+                    List<Element> curves = idsCurves.Select(x => doc.GetElement(x)).ToList();
+
+                    //Podriamos cambiar el Estilo de linea de eastas Lineas de detalle
+
+                    TaskDialog.Show("Manual Revit API", "Region creada con " + curves.Count + " Lineas de detalle");
+                    //Confirmamos transaction
+                    tx.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region MANIPULACION DE REGIONES DE RECORTE
+            try
+            {
+
+                //Solo admitimos vista en planta
+                if (uidoc.ActiveView is ViewPlan view)
+                {
+                    //Creamos nuevo CurveLoop
+                    CurveLoop loop = new CurveLoop();
+                    //Creamos 6 XYZ
+                    XYZ xYZ0 = new XYZ(30, 20, 0);
+                    XYZ xYZ1 = new XYZ(30, -20, 0);
+                    XYZ xYZ2 = new XYZ(-10, -20, 0);
+                    XYZ xYZ3 = new XYZ(-10, -10, 0);
+                    XYZ xYZ4 = new XYZ(-30, -10, 0);
+                    XYZ xYZ5 = new XYZ(-30, 20, 0);
+
+                    //Añadimos 6 Line ordenadasu orientadas al CurveLoop
+                    loop.Append(Line.CreateBound(xYZ0, xYZ1));
+                    loop.Append(Line.CreateBound(xYZ1, xYZ2));
+                    loop.Append(Line.CreateBound(xYZ2, xYZ3));
+                    loop.Append(Line.CreateBound(xYZ3, xYZ4));
+                    loop.Append(Line.CreateBound(xYZ4, xYZ5));
+                    loop.Append(Line.CreateBound(xYZ5, xYZ0));
+
+                    //Creamos Transaction
+                    using (Transaction tx = new Transaction(doc))
+                    {
+                        //Iniciamos Transaction
+                        tx.Start("Transaction Region recorte");
+
+                        //Accedemos a la region
+                        ViewCropRegionShapeManager vcrShapeMgr = view.GetCropRegionShapeManager();
+                        //Asignamos la region
+                        vcrShapeMgr.SetCropShape(loop);
+
+                        //Activamos recorte y visibilidad
+                        view.CropBoxActive = true;
+                        view.CropBoxVisible = true;
+
+                        //Confirmamos Transaction
+                        tx.Commit();
+                    }
+                }
+                else
+                {
+                    message = "Solo vista en planta";
+                    return Result.Cancelled;
+                }
+
+                //Mensaje final
+                TaskDialog.Show("Manual Revit API", "Region de recorte creada");
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region DIVIDIR UNA REGION DE RECORTE EN SECCIONES.
+            try
+            {
+                // NECESITAMOS PRIMERO "RESTAURAR" LA REGION DE RECORTE, PARA LUEGO SUBDIVIDIRLA.
+                // PODEMOS DIVIDIR UNA SUBDIVISION SUCESIVAMENTE.
+
+                //Solo admitimos vista en planta
+                if (uidoc.ActiveView is ViewPlan view)
+                {
+                    //Creamos Transaction
+                    using (Transaction tx = new Transaction(doc))
+                    {
+                        //Iniciamos Transaction
+                        tx.Start("Transaction Region recorte");
+
+                        //Accedemos a la region
+                        ViewCropRegionShapeManager vcrShapeMgr = view.GetCropRegionShapeManager();
+
+                        //Eliminamos regiones poligonales
+                        vcrShapeMgr.RemoveCropRegionShape();
+
+                        //Dividimos la region
+                        vcrShapeMgr.SplitRegionHorizontally(0, 0.4, 0.6);
+
+                        //Activamos recorte y visibilidad
+                        view.CropBoxActive = true;
+                        view.CropBoxVisible = true;
+
+                        //Confirmamos Transaction
+                        tx.Commit();
+                    }
+                }
+                else
+                {
+                    message = "Solo vista en planta";
+                    return Result.Cancelled;
+                }
+
+                //Mensaje final
+                TaskDialog.Show("Manual Revit API", "Region de recorte dividida");
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region MANIPULACION DE LOS MODOS TEMPORALES DE LAS VISTAS
+            try
+            {
+
+                //Vista actual
+                View view = uidoc.ActiveView;
+
+                //Creamos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction modos temporales");
+
+                    //Obtenemos los modos temporales
+                    TemporaryViewModes viewModes = view.TemporaryViewModes;
+
+                    if (viewModes == null)
+                    {
+                        message = "La vista no soporta modos temporales";
+                        return Result.Cancelled;
+                    }
+                    else if (doc.IsFamilyDocument) //Si es FamilyDocument podemos acceder a PreviewFamilyVisibilityMode
+                    {
+                        // Los modos debe ser viables y estar habilitado
+                        if (viewModes.IsModeAvailable(TemporaryViewMode.PreviewFamilyVisibility) && viewModes.IsModeEnabled(TemporaryViewMode.PreviewFamilyVisibility))
+                        {
+                            //El estado debe ser viable
+                            if (viewModes.IsValidState(PreviewFamilyVisibilityMode.On))
+                            {
+                                viewModes.PreviewFamilyVisibility = PreviewFamilyVisibilityMode.On;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Los modos debe ser viables y estar habilitado
+                        if (viewModes.IsModeEnabled(TemporaryViewMode.RevealHiddenElements) && viewModes.IsModeAvailable(TemporaryViewMode.RevealHiddenElements))
+                        {
+                            viewModes.RevealHiddenElements = true;
+                        }
+                    };
+
+                    //Confirmamos Transaction
+                    tx.Commit();
+                }
+                //Mensaje final
+                TaskDialog.Show("Manual Revit API", "Modos cambiados");
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 7.5 REVISIONES
+
+            #region CREAR REVISIONES
+            try
+            {
+
+                //Creamos 4 puntos 
+                XYZ xYZ0 = XYZ.Zero;
+                XYZ xYZ1 = new XYZ(0, 20, 0);
+                XYZ xYZ2 = new XYZ(20, 20, 0);
+                XYZ xYZ3 = new XYZ(20, 0, 0);
+
+                //Creamos lista de curves para nube de revisión
+                IList<Curve> curves = new List<Curve>();
+                curves.Add(Line.CreateBound(xYZ0, xYZ1));
+                curves.Add(Line.CreateBound(xYZ1, xYZ2));
+                curves.Add(Line.CreateBound(xYZ2, xYZ3));
+                curves.Add(Line.CreateBound(xYZ3, xYZ0));
+
+                //Creamos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction revisiones");
+
+                    //Creamos 3 Revision
+                    AddNewRevision(doc, "Descripción de ejemplo 1", "Supervisor 1", "Arquitecto 1");
+                    AddNewRevision(doc, "Descripción de ejemplo 2", "Supervisor 1", "Arquitecto 2");
+                    Revision revision = AddNewRevision(doc, "Descripción de ejemplo 3", "Supervisor 1", "Arquitecto 3");
+
+                    if (!(doc.ActiveView is View3D) && revision.Issued == false)
+                    {
+                        //Creamos nube de revisión
+                        RevisionCloud.Create(doc, doc.ActiveView, revision.Id, curves);
+                    }
+
+                    //Confirmamos Transaction
+                    tx.Commit();
+                }
+
+                //Mensaje final
+                TaskDialog.Show("Manual Revit API", "Revisiones creadas");
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region COMBINAR LAS NUVES DE REVISION
+            try
+            {
+
+                //Obtenemos todas las Revisions
+                List<Revision> revisions = Revision.GetAllRevisionIds(doc).Select(x => doc.GetElement(x)).Cast<Revision>().ToList();
+
+                // Solo se pueden fusion las NO emitidas
+                // Seleccionamos solamente NO emitidas
+                revisions = revisions.Where(x => x.Issued == false).ToList();
+
+                //Para combinar necesitas >1
+                if (revisions.Count < 2)
+                {
+                    message = "Al menos necesitamos 2 Revisiones sin emitir";
+                    return Result.Cancelled;
+                }
+
+                //Obtenemos la ultima
+                Revision revision = revisions.LastOrDefault();
+                string revisionId = revision.Id.IntegerValue.ToString();
+                //Obtenemos revision previa
+                Revision previousRevision = revisions.ElementAt(revisions.Count - 2);
+
+                //Creamos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction Combinar revisión");
+
+                    //Combinamos ultima con previa. obtenemos RevisionCloud
+                    ISet<ElementId> revisionCloudIds = Revision.CombineWithPrevious(doc, revision.Id);
+
+                    //Número de RevisionClouds existentes en la última
+                    int movedClouds = revisionCloudIds.Count;
+                    //Si la ultima tenia RevisionCloud
+                    if (movedClouds > 0)
+                    {
+                        //Obtenemios primer RevisionCloud
+                        RevisionCloud cloud = doc.GetElement(revisionCloudIds.ElementAt(0)) as RevisionCloud;
+                        if (cloud != null)
+                        {
+                            string msg = string.Format("La Revision {0} se ha borrado y {1} RevisionCloud añadidos a la Revision {2}",
+                                revisionId, movedClouds, cloud.RevisionId.ToString());
+                            TaskDialog.Show("Manual Revit API", msg);
+                        }
+                    }
+                    //Confirmamos Transaction
+                    tx.Commit();
+                    TaskDialog.Show("Manual Revit API", "Combinacion terminada");
+
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 8.0 ----------------------------------- FILTROS ------------------------------------
+
+            // 8.1 FILTROS
+            
+            #region FILTROS DE VISUALIZACION PARA APLICAR EN UNA VISTA
+            try
+            {
+
+                //Obtenemos vista actual
+                View view = uidoc.ActiveView;
+
+                // Creamos ub filtro de clase Floor
+                FilteredElementCollector collector = new FilteredElementCollector(doc).OfClass(typeof(Floor));
+                ICollection<ElementId> elementIds = collector.ToElementIds();
+
+                //Creamos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction Filtro selección");
+
+                    // Creamos filtro y asignamos los Floor
+                    SelectionFilterElement filterElement = SelectionFilterElement.Create(doc, "Filtro para Floor");
+                    filterElement.SetElementIds(elementIds);
+
+                    ElementId filterId = filterElement.Id;
+
+                    // Añadimos el filtro a la View
+                    view.AddFilter(filterId);
+
+                    //Por norma general debemos regenerar para visualizar el filtro
+                    doc.Regenerate();
+
+                    //Obtenemos configuración de gráficos
+                    OverrideGraphicSettings overrideSettings = view.GetFilterOverrides(filterId);
+
+                    //Cambiamos la configuración de gráficos existente a color azul
+                    overrideSettings.SetProjectionLineColor(new Color(0x00, 0x00, 0xFF));
+
+                    //Sobreescribimos en el filtro en la vista, la configuración de gráficos
+                    view.SetFilterOverrides(filterId, overrideSettings);
+
+                    //Confirmamos Transaction
+                    tx.Commit();
+                }
+
+                TaskDialog.Show("API Revit Manual", "Filtro añadido");
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region REGLAS PARA FILTROS - LOS ELEMENTOS ESTRUCTURALES DESAPARECEN DE LA VISTA
+            try
+            {
+                //Obtenemos la vista actual
+                View view = uidoc.ActiveView;
+
+                //Creamos una coleccion con las categorias que deseamos filtrar. Walls
+                ISet<ElementId> categories = new HashSet<ElementId>() { new ElementId(BuiltInCategory.OST_Walls) };
+
+                //Creamos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction Filtro reglas");
+
+                    //Obtenemos el parametro Uso Estructura 0 = no es estructura, > 0 = si es estructura
+                    ElementId exteriorParamId = new ElementId(BuiltInParameter.WALL_STRUCTURAL_USAGE_PARAM);
+                    //Creamos el filtro de ElementParameterFilter
+                    ElementParameterFilter filter = new ElementParameterFilter(ParameterFilterRuleFactory.CreateGreaterRule(exteriorParamId, 0));
+
+                    // Creamos filtro asociado a las categorías de entrada (Wall)
+                    if (ParameterFilterElement.ElementFilterIsAcceptableForParameterFilterElement(doc, categories, filter))
+                    {
+                        ParameterFilterElement parameterFilterElement = ParameterFilterElement.Create(doc, "Filtro muros estructurales", categories);
+                        parameterFilterElement.SetElementFilter(filter);
+                        // Aplicamos filtro a la vista
+                        view.AddFilter(parameterFilterElement.Id);
+                        //Los objetos incluidos NO son visibles
+                        view.SetFilterVisibility(parameterFilterElement.Id, false);
+                    }
+                    else
+                    {
+                        message = "El filtro no puede usarse";
+                        return Result.Cancelled;
+                    }
+                    //Confirmamos Transaction
+                    tx.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region MODIFICACION DE FILTROS - CAMBIAMOS EL COLOR DE LOS FILTROS
+            try
+            {
+
+                //Obtenemos la vista actual
+                View view = uidoc.ActiveView;
+                // Find any filter with overrides setting cut color to Red
+
+                //Obtenemos los filtros de la vista actual
+                foreach (ElementId filterId in view.GetFilters())
+                {
+                    //Obtenemos configuración de gráficos
+                    OverrideGraphicSettings overrideSettings = view.GetFilterOverrides(filterId);
+                    //Obtenemos el color de las lineas de proyección
+                    Color lineColor = overrideSettings.ProjectionLineColor;
+                    //Si no tiene color 
+                    if (!lineColor.IsValid || lineColor == Color.InvalidColorValue)
+                        continue;
+
+                    // Si el color es azul, lo cambiamos a verde
+                    if (lineColor.Red == 0x00 && lineColor.Green == 0x00 && lineColor.Blue == 0xFF)
+                    {
+                        overrideSettings.SetProjectionLineColor(new Color(0x00, 0xFF, 0x00));
+
+                        //Crteamos Transaction
+                        using (Transaction tx = new Transaction(doc))
+                        {
+                            //Iniciamos Transaction
+                            tx.Start("Transaction Name");
+
+                            //Sobrescribimos en la vista, para el filtro seleccionado la configuración
+                            view.SetFilterOverrides(filterId, overrideSettings);
+
+                            //Confirmamos Transaction
+                            tx.Commit();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 9.0 ----------------------------------- TASKDIALOG ------------------------------------
+
+            #region TASKDIALOG FUNCIONALES
             try
             {
 
@@ -3514,11 +3901,11 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // TASKDIALOG CON UN CHECKBOX, TIENE CIERTA "INCOMPATIBILIDAD" CON LAS OPCIONES DE ANTES.
-            // La imcompatibilidad es que ".VerificationText" y ".ExtraCheckBox" no pueden estar a la vez en un TaskDialog.
-            #region
+            #region TASKDIALOG CON UN CHECKBOX
             try
             {
+                // TIENE CIERTA "INCOMPATIBILIDAD" CON LAS OPCIONES DE ANTES.
+                // La imcompatibilidad es que ".VerificationText" y ".ExtraCheckBox" no pueden estar a la vez en un TaskDialog.
 
                 // Cramos un TaskDialog de Revit para comunicar información al usuario.
                 TaskDialog mainDialog = new TaskDialog("Título: TaskDialog");
@@ -3560,8 +3947,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // OTRA OPCION DE TASKDIALOG CON UN CHECKBOX.
-            #region
+            #region OTRA OPCION DE TASKDIALOG CON UN CHECKBOX.
             try
             {
 
@@ -3607,8 +3993,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // BARRA DE PROGRESO, DE MOMENTO PARECE QUE SU FUNCIONALIDAD ESTA INCOMPLETA
-            #region
+            #region BARRA DE PROGRESO, DE MOMENTO PARECE QUE SU FUNCIONALIDAD ESTA INCOMPLETA
             try
             {
                 // Cramos un TaskDialog de Revit para comunicar información al usuario.
@@ -3647,12 +4032,15 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // TRANSACCIONES - 2 ESTRUCTURAS DIFERENTES, USANDO "using" Y SIN USARLO.
-            // Tambien hay Subtransacciones, sin nombre y que no se pueden acceder desde el menu "deshacer".
-            // transactionGroup.Assimilate(); - Sirve para que el grupo de transacciones se vea en 1 solo paso en el boton deshacer.
-            #region
+            // 10.0 ----------------------------------- TRANSACCIONES ------------------------------------
+
+            #region TRANSACCIONES - 2 ESTRUCTURAS DIFERENTES, USANDO "using" Y SIN USARLO.
             try
             {
+
+                // Tambien hay Subtransacciones, sin nombre y que no se pueden acceder desde el menu "deshacer".
+                // transactionGroup.Assimilate(); - Sirve para que el grupo de transacciones se vea en 1 solo paso en el boton deshacer.
+
                 //Creamos TransactionGroup
                 //   using (TransactionGroup transactionGroup = new TransactionGroup(doc, "Dibujar lineas"))
                 //  {
@@ -3731,8 +4119,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // VALORES DEL BoundingBox
-            #region
+            // 11.0 ----------------------------------- VALORES GEOMETRICOS ------------------------------------
+
+            #region VALORES DEL BoundingBox
             try
             {
 
@@ -3774,11 +4163,12 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // OBTENER EL GeometryElement - ESTO REQUIERE DEL USO DE Options, DONDE VAMOS A ESPECIFICAR LAS CARACTERISTICAS A BUSCAR.
-            // CON ESTE GeometryObject PODEMOS OBTENER EL RESTO DE LAS CARACTERISTICAS GEOMETRICAS DEL OBJETO.
-            #region
+            #region OBTENER EL GeometryElement
             try
             {
+
+                // ESTO REQUIERE DEL USO DE Options, DONDE VAMOS A ESPECIFICAR LAS CARACTERISTICAS A BUSCAR.
+                // CON ESTE GeometryObject PODEMOS OBTENER EL RESTO DE LAS CARACTERISTICAS GEOMETRICAS DEL OBJETO.
 
                 Selection sel = uidoc.Selection;
                 //Obtenenos la selección
@@ -3897,11 +4287,10 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // OBTENEMOS LA SUPERFICIE VIDRIADA DE UNA VENTANA EN ESPECIFICO
-            // Requiere el ingreso a una "GeometryInstance", diferente al "GeometryElement" de antes.
-            #region
+            #region OBTENEMOS LA SUPERFICIE VIDRIADA DE UNA VENTANA EN ESPECIFICO
             try
             {
+                // Requiere el ingreso a una "GeometryInstance", diferente al "GeometryElement" de antes.
 
                 Selection sel = uidoc.Selection;
                 //Obtenenos la selección
@@ -3994,8 +4383,176 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREACION DE ETIQUETAS
-            #region
+            #region CREACION DE DirectShape - En este caso esta creado con la categoria "Walls", que es algo ilogico.
+            try
+            {
+                // Definimos centro
+                XYZ center = XYZ.Zero;
+                double radius = 2.0;
+
+                //Dos puntos del diámetro
+                XYZ profilePlus = center + new XYZ(0, radius, 0);
+                XYZ profileMinus = center - new XYZ(0, radius, 0);
+
+                //Creamos un semicírculo para girarlo 360
+                List<Curve> profile = new List<Curve>();
+                profile.Add(Line.CreateBound(profilePlus, profileMinus));
+                profile.Add(Arc.Create(profileMinus, profilePlus, center + new XYZ(radius, 0, 0)));
+
+                //CurveLoop con semicírculo
+                CurveLoop curveLoop = CurveLoop.Create(profile);
+
+                //Creamos SolidOptions material y estilo = -1
+                SolidOptions options = new SolidOptions(ElementId.InvalidElementId, ElementId.InvalidElementId);
+
+                //Definimos Frame y comprobamos 
+                Frame frame = new Frame(center, XYZ.BasisX, -XYZ.BasisZ, XYZ.BasisY);
+                if (Frame.CanDefineRevitGeometry(frame) == false)
+                {
+                    message = "Imposible crear DirectShape";
+                    return Result.Failed;
+                }
+
+                //Creamos un sólido de revolución
+                Solid sphere = GeometryCreationUtilities.CreateRevolvedGeometry(frame, new CurveLoop[] { curveLoop }, 0, 2 * Math.PI, options);
+                //Definimos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction Name Solid");
+
+                    // Creamos una DirectShape en el doc categoría puertas
+                    Autodesk.Revit.DB.DirectShape ds = Autodesk.Revit.DB.DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_Doors));
+
+                    //Completamos datos
+                    ds.ApplicationId = "Revit API Manual";
+                    ds.ApplicationDataId = "Revit API Manual. Creación esfera";
+                    //Asignamos geometría
+                    ds.SetShape(new GeometryObject[] { sphere });
+
+                    //Confirmamos Transaction
+                    tx.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region CREACION TOTALMENTE MANUAL DEL DirectShape
+            try
+            {
+
+                //Asumimos ejes en direccion estandard
+
+                //Construimos BRepBuilder Solido
+                BRepBuilder brepBuilder = new BRepBuilder(BRepType.Solid);
+
+                //Definimos Frame y comprobamos 
+                Frame frame = new Frame(new XYZ(50, -100, 0), new XYZ(0, 1, 0), new XYZ(-1, 0, 0), new XYZ(0, 0, 1));
+                if (Frame.CanDefineRevitGeometry(frame) == false)
+                {
+                    message = "Imposible crear DirectShape";
+                    return Result.Failed;
+                }
+
+                //Creamos geometria 4 semicirculos y dos generatrices de cilindro
+                BRepBuilderEdgeGeometry frontEdgeBottom = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(0, -100, 0), new XYZ(100, -100, 0), new XYZ(50, -50, 0)));
+                BRepBuilderEdgeGeometry backEdgeBottom = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(100, -100, 0), new XYZ(0, -100, 0), new XYZ(50, -150, 0)));
+
+                BRepBuilderEdgeGeometry frontEdgeTop = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(0, -100, 100), new XYZ(100, -100, 100), new XYZ(50, -50, 100)));
+                BRepBuilderEdgeGeometry backEdgeTop = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(0, -100, 100), new XYZ(100, -100, 100), new XYZ(50, -150, 100)));
+
+                BRepBuilderEdgeGeometry linearEdgeFront = BRepBuilderEdgeGeometry.Create(new XYZ(100, -100, 0), new XYZ(100, -100, 100));
+                BRepBuilderEdgeGeometry linearEdgeBack = BRepBuilderEdgeGeometry.Create(new XYZ(0, -100, 0), new XYZ(0, -100, 100));
+
+                //Añadimos los 6 Edges
+                BRepBuilderGeometryId frontEdgeBottomId = brepBuilder.AddEdge(frontEdgeBottom);
+                BRepBuilderGeometryId frontEdgeTopId = brepBuilder.AddEdge(frontEdgeTop);
+                BRepBuilderGeometryId linearEdgeFrontId = brepBuilder.AddEdge(linearEdgeFront);
+                BRepBuilderGeometryId linearEdgeBackId = brepBuilder.AddEdge(linearEdgeBack);
+                BRepBuilderGeometryId backEdgeBottomId = brepBuilder.AddEdge(backEdgeBottom);
+                BRepBuilderGeometryId backEdgeTopId = brepBuilder.AddEdge(backEdgeTop);
+
+                // Las superficies de las cuatro Faces. 
+                //Cilindrica
+                CylindricalSurface cylSurf = CylindricalSurface.Create(frame, 50);
+                //Planas superior e inferior
+                Plane top = Plane.CreateByNormalAndOrigin(new XYZ(0, 0, 1), new XYZ(0, 0, 100));  //Normal hacia afuera
+                Plane bottom = Plane.CreateByNormalAndOrigin(new XYZ(0, 0, 1), new XYZ(0, 0, 0)); //Normal hacia adentro
+
+                //Añadimos las 4 Face
+                BRepBuilderGeometryId frontCylFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(cylSurf, null), false);
+                BRepBuilderGeometryId backCylFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(cylSurf, null), false);
+                BRepBuilderGeometryId topFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(top, null), false);
+                BRepBuilderGeometryId bottomFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(bottom, null), true);
+
+                //Añadimos Loops de las 4 Face
+                BRepBuilderGeometryId loopId_Top = brepBuilder.AddLoop(topFaceId);
+                BRepBuilderGeometryId loopId_Bottom = brepBuilder.AddLoop(bottomFaceId);
+                BRepBuilderGeometryId loopId_Front = brepBuilder.AddLoop(frontCylFaceId);
+                BRepBuilderGeometryId loopId_Back = brepBuilder.AddLoop(backCylFaceId);
+
+                //Añadimos coEdge para el Loop de la Face frontal
+                brepBuilder.AddCoEdge(loopId_Front, linearEdgeBackId, false);
+                brepBuilder.AddCoEdge(loopId_Front, frontEdgeTopId, false);
+                brepBuilder.AddCoEdge(loopId_Front, linearEdgeFrontId, true);
+                brepBuilder.AddCoEdge(loopId_Front, frontEdgeBottomId, true);
+                brepBuilder.FinishLoop(loopId_Front);
+                brepBuilder.FinishFace(frontCylFaceId);
+
+                //Añadimos coEdge para el Loop de la Face trasera
+                brepBuilder.AddCoEdge(loopId_Back, linearEdgeBackId, true);
+                brepBuilder.AddCoEdge(loopId_Back, backEdgeBottomId, true);
+                brepBuilder.AddCoEdge(loopId_Back, linearEdgeFrontId, false);
+                brepBuilder.AddCoEdge(loopId_Back, backEdgeTopId, true);
+                brepBuilder.FinishLoop(loopId_Back);
+                brepBuilder.FinishFace(backCylFaceId);
+
+                //Añadimos coEdge para el Loop de la Face superior
+                brepBuilder.AddCoEdge(loopId_Top, backEdgeTopId, false);
+                brepBuilder.AddCoEdge(loopId_Top, frontEdgeTopId, true);
+                brepBuilder.FinishLoop(loopId_Top);
+                brepBuilder.FinishFace(topFaceId);
+
+                //Añadimos coEdge para el Loop de la Face inferior
+                brepBuilder.AddCoEdge(loopId_Bottom, frontEdgeBottomId, false);
+                brepBuilder.AddCoEdge(loopId_Bottom, backEdgeBottomId, false);
+                brepBuilder.FinishLoop(loopId_Bottom);
+                brepBuilder.FinishFace(bottomFaceId);
+
+                //Finalizamos construcción
+                brepBuilder.Finish();
+
+                //Definimos Transaction
+                using (Transaction tx = new Transaction(doc))
+                {
+                    //Iniciamos Transaction
+                    tx.Start("Transaction Name BRepBuilder");
+
+                    //Creamos una DirectShape en el doc categoría muros
+                    Autodesk.Revit.DB.DirectShape ds = Autodesk.Revit.DB.DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_Walls));
+
+                    //Completamos datos
+                    ds.ApplicationId = "Revit API Manual";
+                    ds.ApplicationDataId = "Revit API Manual. Creación Tessellated";
+                    //Asignamos geometría
+                    ds.SetShape(brepBuilder);
+
+                    //Confirmamos Transaction
+                    tx.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 12.0 ----------------------------------- ETIQUETAS, COTAS, TEXTOS ------------------------------------
+
+            #region CREACION DE ETIQUETAS
             try
             {
 
@@ -4074,8 +4631,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREACION DE COTAS
-            #region
+            #region CREACION DE COTAS
             try
             {
 
@@ -4178,8 +4734,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // MODIFICACION DE COTAS Y OBTENCION DE INFORMACION DE LAS RESTRICCIONES.
-            #region
+            #region MODIFICACION DE COTAS Y OBTENCION DE INFORMACION DE LAS RESTRICCIONES.
             try
             {
 
@@ -4276,8 +4831,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREAR UN ESTILO DE LINEA - PARA ModelLines POR EJEMPLO
-            #region
+            #region CREAR UN ESTILO DE LINEA - PARA ModelLines POR EJEMPLO
             try
             {
 
@@ -4351,8 +4905,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREAR LINEAS DE DETALLE - RAPI 15 - 10
-            #region
+            #region CREAR LINEAS DE DETALLE
             try
             {
                 //Nombre para Subcategotia y Patron de lineas
@@ -4455,89 +5008,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREAR REGIONES
+            // 13.0 ----------------------------------- MATERIALES ------------------------------------
 
-            #region
-            try
-            {
-
-                //Filtramos los niveles, metodo abreviado. Filtro de clase
-                FilteredElementCollector col = new FilteredElementCollector(doc).OfClass(typeof(Level));
-                //Seleccionamos el primer nivel de la colección
-                Level level = col.First() as Level;
-
-                //Creamos 4 puntos en planta. Cuadricula 10*10
-                XYZ xYZ0 = XYZ.Zero;
-                XYZ xYZ1 = new XYZ(10, 0, 0);
-                XYZ xYZ2 = new XYZ(10, 10, 0);
-                XYZ xYZ3 = new XYZ(0, 10, 0);
-
-                //Creamos un vector de desplazamiento. a 45 º
-                XYZ desfase = new XYZ(15, 15, 0);
-
-                //Creamos 4 puntos en planta. Cuadricula 10*10
-                XYZ xYZ5 = XYZ.Zero + desfase;
-                XYZ xYZ6 = xYZ1 + desfase;
-                XYZ xYZ7 = xYZ2 + desfase;
-                XYZ xYZ8 = xYZ3 + desfase;
-
-                //Creamos primer conjunto de Curves
-                Curve c0 = Line.CreateBound(xYZ0, xYZ1);
-                Curve c1 = Line.CreateBound(xYZ1, xYZ2);
-                Curve c2 = Line.CreateBound(xYZ2, xYZ3);
-                Curve c3 = Line.CreateBound(xYZ3, xYZ0);
-
-                //Creamos segundo conjunto de Curves
-                Curve c4 = Line.CreateBound(xYZ5, xYZ6);
-                Curve c5 = Line.CreateBound(xYZ6, xYZ7);
-                Curve c6 = Line.CreateBound(xYZ7, xYZ8);
-                Curve c7 = Line.CreateBound(xYZ8, xYZ5);
-
-                //Creamos primer CurveLoop 
-                CurveLoop profileA = new CurveLoop();
-                profileA.Append(c0);
-                profileA.Append(c1);
-                profileA.Append(c2);
-                profileA.Append(c3);
-
-                //Creamos segundo CurveLoop 
-                CurveLoop profileB = new CurveLoop();
-                profileB.Append(c4);
-                profileB.Append(c5);
-                profileB.Append(c6);
-                profileB.Append(c7);
-
-                //Creamos una lista de CurveLoop
-                List<CurveLoop> curveLoops = new List<CurveLoop>() { profileA, profileB };
-                //Obtenemos el ElementType por defecto
-                //No es posible crear region de mascara
-                ElementId id = doc.GetDefaultElementTypeId(ElementTypeGroup.FilledRegionType);
-                //Creamos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction región");
-                    //Creamos la región
-                    FilledRegion filledRegion = FilledRegion.Create(doc, id, uidoc.ActiveView.Id, curveLoops);
-                    //Obtenemos las DetailCurve del contorno
-                    IList<ElementId> idsCurves = filledRegion.GetDependentElements(new ElementClassFilter(typeof(CurveElement)));
-                    List<Element> curves = idsCurves.Select(x => doc.GetElement(x)).ToList();
-
-                    //Podriamos cambiar el Estilo de linea de eastas Lineas de detalle
-
-                    TaskDialog.Show("Manual Revit API", "Region creada con " + curves.Count + " Lineas de detalle");
-                    //Confirmamos transaction
-                    tx.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // OBTENER INFORMACION DE LOS MATERIALES - CAMBIO DEL COLOR DEL MATERIAL
-            #region
+            #region OBTENER INFORMACION DE LOS MATERIALES - CAMBIO DEL COLOR DEL MATERIAL
             try
             {
 
@@ -4678,9 +5151,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREAR Y DUPLICAR MATERIALES
-
-            #region
+            #region CREAR Y DUPLICAR MATERIALES
             try
             {
                 //Definimos Transaction
@@ -4733,9 +5204,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // VER LOS DIFERENTES MATERIALES CON LOS QUE ESTA COMPUESTO UN MURO, VOLUMENES
-
-            #region
+            #region VER LOS DIFERENTES MATERIALES CON LOS QUE ESTA COMPUESTO UN MURO, VOLUMENES
             try
             {
 
@@ -4826,9 +5295,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREACION DE ESQUEMAS - ¿PUEDE SERVIR PARA CREAR CAPAS?
+            // 14.0 ----------------------------------- ESQUEMAS ------------------------------------
 
-            #region
+            #region CREACION DE ESQUEMAS - ¿PUEDE SERVIR PARA CREAR CAPAS?
             try
             {
 
@@ -4870,12 +5339,12 @@ namespace Apuntes_de_Csharp_Revit_API
                         schemaBuilder.SetReadAccessLevel(AccessLevel.Public);
                         schemaBuilder.SetSchemaName("EspesorMuro");
                         schemaBuilder.SetDocumentation("Schema un Field. Simple <double> = Espesor del muro");
-
+                        /*
                         //Construimos Field
                         FieldBuilder fieldBuilder = schemaBuilder.AddSimpleField("CampoEspesorMuro", typeof(double));
                         fieldBuilder.SetSpec(SpecTypeId.Length); //V2022
                                                                  // fieldBuilder.SetUnitType(UnitType.UT_Length);/V2021
-
+                        */
                         //Finalizamos constructor Field
                         schema = schemaBuilder.Finish();
                     }
@@ -4902,12 +5371,12 @@ namespace Apuntes_de_Csharp_Revit_API
                         schemaBuilder.SetReadAccessLevel(AccessLevel.Public);
                         schemaBuilder.SetSchemaName("EspesorMuroLongitud");
                         schemaBuilder.SetDocumentation("Schema un Field. Array<double> = Espesor y longitud del muro");
-
+                        /*
                         //Construimos Field
                         FieldBuilder fieldBuilder = schemaBuilder.AddArrayField("CampoEspesorLongitudMuro", typeof(double));
                         fieldBuilder.SetSpec(SpecTypeId.Length);//V2022
                                                                 //fieldBuilder.SetUnitType(UnitType.UT_Length);//V2021
-
+                        */
                         //Finalizamos constructor Field
                         schema = schemaBuilder.Finish();
                     }
@@ -4935,11 +5404,12 @@ namespace Apuntes_de_Csharp_Revit_API
                         schemaBuilder.SetReadAccessLevel(AccessLevel.Public);
                         schemaBuilder.SetSchemaName("EspesorMuroLongitudyNombre");
                         schemaBuilder.SetDocumentation("Schema dos Field. Simple <string> = nombre. Array<double> = Espesor y longitud del muro");
-
+                        /*
                         //Construimos Fields
                         FieldBuilder fieldBuilder = schemaBuilder.AddArrayField("CampoEspesorLongitud", typeof(double));
                         fieldBuilder.SetSpec(SpecTypeId.Length);//.SetUnitType(UnitType.UT_Length);
                                                                 //Segundo Field
+                        */
                         schemaBuilder.AddSimpleField("CampoNombreMuro", typeof(string));
 
                         //Finalizamos constructor Fields
@@ -4970,12 +5440,13 @@ namespace Apuntes_de_Csharp_Revit_API
                         schemaBuilder.SetReadAccessLevel(AccessLevel.Public);
                         schemaBuilder.SetSchemaName("DiccionarioXYZ");
                         schemaBuilder.SetDocumentation("Schema dos Field. Simple <ElementId> = Id.  IDictionary<int, XYZ> = Indide y XYZ");
-
+                        /*
                         //Construimos Fields
                         FieldBuilder fieldBuilder = schemaBuilder.AddMapField("CampoDiccionario", typeof(int), typeof(XYZ));
                         fieldBuilder.SetSpec(SpecTypeId.Length);//V2022
                                                                 //.SetUnitType(UnitType.UT_Length);//V2021
                                                                 //Segundo Field
+                        */
                         schemaBuilder.AddSimpleField("CampoID", typeof(ElementId));
 
                         //Finalizamos constructor Fields
@@ -5009,9 +5480,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // "RECUPERAR" DATOS DE LA ENTITY
-
-            #region
+            #region "RECUPERAR" DATOS DE LA ENTITY
             try
             {
 
@@ -5130,9 +5599,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // BORRAR ESQUEMAS, HAY 2 METODOS
-
-            #region
+            #region BORRAR ESQUEMAS, HAY 2 METODOS
             try
             {
 
@@ -5202,180 +5669,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CREACION DE DirectShape - En este caso esta creado con la categoria "Walls", que es algo ilogico.
+            // 15.0 ----------------------------------- ARCHIVOS VINCULADOS ------------------------------------
 
-            #region
-            try
-            {
-                // Definimos centro
-                XYZ center = XYZ.Zero;
-                double radius = 2.0;
-
-                //Dos puntos del diámetro
-                XYZ profilePlus = center + new XYZ(0, radius, 0);
-                XYZ profileMinus = center - new XYZ(0, radius, 0);
-
-                //Creamos un semicírculo para girarlo 360
-                List<Curve> profile = new List<Curve>();
-                profile.Add(Line.CreateBound(profilePlus, profileMinus));
-                profile.Add(Arc.Create(profileMinus, profilePlus, center + new XYZ(radius, 0, 0)));
-
-                //CurveLoop con semicírculo
-                CurveLoop curveLoop = CurveLoop.Create(profile);
-
-                //Creamos SolidOptions material y estilo = -1
-                SolidOptions options = new SolidOptions(ElementId.InvalidElementId, ElementId.InvalidElementId);
-
-                //Definimos Frame y comprobamos 
-                Frame frame = new Frame(center, XYZ.BasisX, -XYZ.BasisZ, XYZ.BasisY);
-                if (Frame.CanDefineRevitGeometry(frame) == false)
-                {
-                    message = "Imposible crear DirectShape";
-                    return Result.Failed;
-                }
-
-                //Creamos un sólido de revolución
-                Solid sphere = GeometryCreationUtilities.CreateRevolvedGeometry(frame, new CurveLoop[] { curveLoop }, 0, 2 * Math.PI, options);
-                //Definimos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction Name Solid");
-
-                    // Creamos una DirectShape en el doc categoría puertas
-                    Autodesk.Revit.DB.DirectShape ds = Autodesk.Revit.DB.DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_Doors));
-
-                    //Completamos datos
-                    ds.ApplicationId = "Revit API Manual";
-                    ds.ApplicationDataId = "Revit API Manual. Creación esfera";
-                    //Asignamos geometría
-                    ds.SetShape(new GeometryObject[] { sphere });
-
-                    //Confirmamos Transaction
-                    tx.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // CREACION TOTALMENTE MANUAL DEL DirectShape
-
-            #region
-            try
-            {
-
-                //Asumimos ejes en direccion estandard
-
-                //Construimos BRepBuilder Solido
-                BRepBuilder brepBuilder = new BRepBuilder(BRepType.Solid);
-
-                //Definimos Frame y comprobamos 
-                Frame frame = new Frame(new XYZ(50, -100, 0), new XYZ(0, 1, 0), new XYZ(-1, 0, 0), new XYZ(0, 0, 1));
-                if (Frame.CanDefineRevitGeometry(frame) == false)
-                {
-                    message = "Imposible crear DirectShape";
-                    return Result.Failed;
-                }
-
-                //Creamos geometria 4 semicirculos y dos generatrices de cilindro
-                BRepBuilderEdgeGeometry frontEdgeBottom = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(0, -100, 0), new XYZ(100, -100, 0), new XYZ(50, -50, 0)));
-                BRepBuilderEdgeGeometry backEdgeBottom = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(100, -100, 0), new XYZ(0, -100, 0), new XYZ(50, -150, 0)));
-
-                BRepBuilderEdgeGeometry frontEdgeTop = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(0, -100, 100), new XYZ(100, -100, 100), new XYZ(50, -50, 100)));
-                BRepBuilderEdgeGeometry backEdgeTop = BRepBuilderEdgeGeometry.Create(Arc.Create(new XYZ(0, -100, 100), new XYZ(100, -100, 100), new XYZ(50, -150, 100)));
-
-                BRepBuilderEdgeGeometry linearEdgeFront = BRepBuilderEdgeGeometry.Create(new XYZ(100, -100, 0), new XYZ(100, -100, 100));
-                BRepBuilderEdgeGeometry linearEdgeBack = BRepBuilderEdgeGeometry.Create(new XYZ(0, -100, 0), new XYZ(0, -100, 100));
-
-                //Añadimos los 6 Edges
-                BRepBuilderGeometryId frontEdgeBottomId = brepBuilder.AddEdge(frontEdgeBottom);
-                BRepBuilderGeometryId frontEdgeTopId = brepBuilder.AddEdge(frontEdgeTop);
-                BRepBuilderGeometryId linearEdgeFrontId = brepBuilder.AddEdge(linearEdgeFront);
-                BRepBuilderGeometryId linearEdgeBackId = brepBuilder.AddEdge(linearEdgeBack);
-                BRepBuilderGeometryId backEdgeBottomId = brepBuilder.AddEdge(backEdgeBottom);
-                BRepBuilderGeometryId backEdgeTopId = brepBuilder.AddEdge(backEdgeTop);
-
-                // Las superficies de las cuatro Faces. 
-                //Cilindrica
-                CylindricalSurface cylSurf = CylindricalSurface.Create(frame, 50);
-                //Planas superior e inferior
-                Plane top = Plane.CreateByNormalAndOrigin(new XYZ(0, 0, 1), new XYZ(0, 0, 100));  //Normal hacia afuera
-                Plane bottom = Plane.CreateByNormalAndOrigin(new XYZ(0, 0, 1), new XYZ(0, 0, 0)); //Normal hacia adentro
-
-                //Añadimos las 4 Face
-                BRepBuilderGeometryId frontCylFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(cylSurf, null), false);
-                BRepBuilderGeometryId backCylFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(cylSurf, null), false);
-                BRepBuilderGeometryId topFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(top, null), false);
-                BRepBuilderGeometryId bottomFaceId = brepBuilder.AddFace(BRepBuilderSurfaceGeometry.Create(bottom, null), true);
-
-                //Añadimos Loops de las 4 Face
-                BRepBuilderGeometryId loopId_Top = brepBuilder.AddLoop(topFaceId);
-                BRepBuilderGeometryId loopId_Bottom = brepBuilder.AddLoop(bottomFaceId);
-                BRepBuilderGeometryId loopId_Front = brepBuilder.AddLoop(frontCylFaceId);
-                BRepBuilderGeometryId loopId_Back = brepBuilder.AddLoop(backCylFaceId);
-
-                //Añadimos coEdge para el Loop de la Face frontal
-                brepBuilder.AddCoEdge(loopId_Front, linearEdgeBackId, false);
-                brepBuilder.AddCoEdge(loopId_Front, frontEdgeTopId, false);
-                brepBuilder.AddCoEdge(loopId_Front, linearEdgeFrontId, true);
-                brepBuilder.AddCoEdge(loopId_Front, frontEdgeBottomId, true);
-                brepBuilder.FinishLoop(loopId_Front);
-                brepBuilder.FinishFace(frontCylFaceId);
-
-                //Añadimos coEdge para el Loop de la Face trasera
-                brepBuilder.AddCoEdge(loopId_Back, linearEdgeBackId, true);
-                brepBuilder.AddCoEdge(loopId_Back, backEdgeBottomId, true);
-                brepBuilder.AddCoEdge(loopId_Back, linearEdgeFrontId, false);
-                brepBuilder.AddCoEdge(loopId_Back, backEdgeTopId, true);
-                brepBuilder.FinishLoop(loopId_Back);
-                brepBuilder.FinishFace(backCylFaceId);
-
-                //Añadimos coEdge para el Loop de la Face superior
-                brepBuilder.AddCoEdge(loopId_Top, backEdgeTopId, false);
-                brepBuilder.AddCoEdge(loopId_Top, frontEdgeTopId, true);
-                brepBuilder.FinishLoop(loopId_Top);
-                brepBuilder.FinishFace(topFaceId);
-
-                //Añadimos coEdge para el Loop de la Face inferior
-                brepBuilder.AddCoEdge(loopId_Bottom, frontEdgeBottomId, false);
-                brepBuilder.AddCoEdge(loopId_Bottom, backEdgeBottomId, false);
-                brepBuilder.FinishLoop(loopId_Bottom);
-                brepBuilder.FinishFace(bottomFaceId);
-
-                //Finalizamos construcción
-                brepBuilder.Finish();
-
-                //Definimos Transaction
-                using (Transaction tx = new Transaction(doc))
-                {
-                    //Iniciamos Transaction
-                    tx.Start("Transaction Name BRepBuilder");
-
-                    //Creamos una DirectShape en el doc categoría muros
-                    Autodesk.Revit.DB.DirectShape ds = Autodesk.Revit.DB.DirectShape.CreateElement(doc, new ElementId(BuiltInCategory.OST_Walls));
-
-                    //Completamos datos
-                    ds.ApplicationId = "Revit API Manual";
-                    ds.ApplicationDataId = "Revit API Manual. Creación Tessellated";
-                    //Asignamos geometría
-                    ds.SetShape(brepBuilder);
-
-                    //Confirmamos Transaction
-                    tx.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // INFORMACION DEL SiteLocation. - Hay mas metodos en los videos - RAPI 27 - 1
-
-            #region
+            #region INFORMACION DEL SiteLocation. - Hay mas metodos en los videos - RAPI 27 - 1
             try
             {
                 //Obtenemos la SiteLocation.
@@ -5422,10 +5718,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // ARCHIVOS VINCULADOS - PARA SUBDIVISION DEL ARCHIVO.
-            // CREAR LINK
-
-            #region
+            #region CREAR LINK
             try
             {
 
@@ -5492,9 +5785,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // CARGAR Y DESCARGAR LINK
-
-            #region
+            #region CARGAR Y DESCARGAR LINK
             try
             {
 
@@ -5531,9 +5822,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // DESPLAZAR LINK
-
-            #region
+            #region DESPLAZAR LINK
             try
             {
                 //Definimos Reference
@@ -5628,9 +5917,9 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // SISTEMA DE CORRECCION DE ERRORES SEGUN REGLAS DADAS POR REVIT
+            // 16.0 ----------------------------------- CORRECCION DE ERRORES ------------------------------------
 
-            #region
+            #region SISTEMA DE CORRECCION DE ERRORES SEGUN REGLAS DADAS POR REVIT
             try
             {
                 //Creamos string para salida
@@ -5682,10 +5971,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-
-            // ISTEMA DE CORRECCION DE ERRORES SEGUN REGLAS PERSONALIZADAS
-
-            #region
+            #region SISTEMA DE CORRECCION DE ERRORES SEGUN REGLAS PERSONALIZADAS
             try
             {
                 //Obtenemos numero de reglas
@@ -5717,7 +6003,7 @@ namespace Apuntes_de_Csharp_Revit_API
             return Result.Succeeded; // Muestra que la clase tuvo exito en su ejecucion
         }
 
-        // 1.1 -------------------------------------------- FUNCIONES ADICIONALES ----------------------------------------------------
+        // -------------------------------------------- FUNCIONES ADICIONALES ----------------------------------------------------
 
         #region CrearLineas()
         public ModelLine CrearLineas(UIDocument uidoc, SketchPlane sketchPlane, XYZ xYZ1, XYZ xYZ2)
@@ -5799,7 +6085,7 @@ namespace Apuntes_de_Csharp_Revit_API
         }
         #endregion
 
-        #region CrearSchema()
+        #region CrearSchema() ----- REVISAR "FieldBuilder"
         internal static void CrearSchema(Element element, Guid guidSchema)
         {
 
@@ -5812,8 +6098,10 @@ namespace Apuntes_de_Csharp_Revit_API
                 schemaBuilder.SetSchemaName("TestFilterExtensibleStorage");
                 schemaBuilder.SetDocumentation("Empleado para test del filtro ExtensibleStorage");
                 //Creanmos el campo para almacenar string
+                /*
                 FieldBuilder fieldBuilder = schemaBuilder.AddSimpleField("TestFilterValue1", typeof(string));
                 schema = schemaBuilder.Finish();
+                */
             }
             Entity entity = new Entity(schema);
             entity.Set<string>("TestFilterValue1", "Poner un valor");
@@ -5822,7 +6110,7 @@ namespace Apuntes_de_Csharp_Revit_API
         #endregion
     }
 
-    // 1.1 -------------------------------------------- CLASES ADICIONALES ----------------------------------------------------
+    // -------------------------------------------- CLASES ADICIONALES ----------------------------------------------------
 
     #region WallSelectionFilterEtiquetas
     public class WallSelectionFilterEtiquetas : ISelectionFilter
