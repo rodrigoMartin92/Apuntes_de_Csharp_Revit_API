@@ -247,7 +247,7 @@ namespace Apuntes_de_Csharp_Revit_API
 
             // 1.5 ----------------------------------- CARACTERISTICAS GENERALES DE LOS Element ------------------------------------
 
-            #region 1.5.1 NOMBRES DE LOS Element
+            #region 1.5.1 CARACTERISTICAS DE LOS Element
             try
             {
                 IList<Element> ListaDeElement = new List<Element>();
@@ -276,7 +276,23 @@ namespace Apuntes_de_Csharp_Revit_API
                     CaracteristicasElement.Add(element.Category?.BuiltInCategory.ToString() ?? "Sin Category");
                     CaracteristicasElement.Add(element.Category?.CategoryType.ToString() ?? "Sin Category");
                     CaracteristicasElement.Add(element.Category?.Parent.ToString() ?? "Sin Category");
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
 
+            #endregion
+
+            #region 1.5.2 CARACTERISTICAS DE LOS Element.Parameters
+            try
+            {
+                IList<Element> ListaDeElement = new List<Element>();
+                IList<string> CaracteristicasElement = new List<string>();
+
+                foreach (Element element in ListaDeElement)
+                {
                     // PARAMETROS - IMPORTANTE
                     foreach (Parameter parametro in element.Parameters)
                     {
@@ -319,7 +335,23 @@ namespace Apuntes_de_Csharp_Revit_API
                             Console.WriteLine("Tipo de parámetro no admitido");
                         }
                     }
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
 
+            #endregion
+
+            #region 1.5.3 Element.LookupParameter
+            try
+            {
+                IList<Element> ListaDeElement = new List<Element>();
+                IList<string> CaracteristicasElement = new List<string>();
+
+                foreach (Element element in ListaDeElement)
+                {
                     // LOOKUPPARAMETERS - LookupParameter
 
                     // Inicializa la lista para almacenar los parámetros encontrados
@@ -345,7 +377,23 @@ namespace Apuntes_de_Csharp_Revit_API
                     {
                         CaracteristicasElement.Add($"Nombre del LookupParameter: {lookupParam.Definition.Name}");
                     }
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
 
+            #endregion
+
+            #region 1.5.4 OTRAS CARACTERISTICAS
+            try
+            {
+                IList<Element> ListaDeElement = new List<Element>();
+                IList<string> CaracteristicasElement = new List<string>();
+
+                foreach (Element element in ListaDeElement)
+                {
 
                     // LOCALIZACION
                     Location location = element.Location;
@@ -390,9 +438,7 @@ namespace Apuntes_de_Csharp_Revit_API
             {
                 message = ex.ToString();
             }
-
             #endregion
-            // falta subdividir
 
             // 1.6 ----------------------------------- CATEGORIAS ------------------------------------
 
@@ -418,7 +464,146 @@ namespace Apuntes_de_Csharp_Revit_API
                 message = ex.ToString();
             }
             #endregion
-            // falta subdividir
+
+            // 1.7 ----------------------------------- COLECTORES ------------------------------------
+
+            #region 1.7.1 COLECTOR BASICO
+            try
+            {
+                // Crear un colector de elementos filtrado a partir del documento
+                FilteredElementCollector Instancia_del_colector = new FilteredElementCollector(doc);
+                // El colector sin una categoría no permite ver elementos si no tiene una "BuiltInCategory"
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 1.7.2 COLECTOR POR BuiltInCategory (MUROS)
+            try
+            {
+                // Crear un colector filtrado por la categoría BuiltInCategory.OST_Walls (muros)
+                FilteredElementCollector Instancia_del_colector_muros = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Walls);
+                // Colector que tiene una lista con todas las instancias de muros y todos los tipos de muros
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 1.7.3 COLECTOR POR BuiltInCategory (MUROS) por vistas
+            try
+            {
+                // Crear un colector filtrado por la categoría BuiltInCategory.OST_Walls, solo en la vista activa
+                FilteredElementCollector Instancia_del_colector_por_vistas = new FilteredElementCollector(doc, doc.ActiveView.Id)
+                    .OfCategory(BuiltInCategory.OST_Walls);
+                // Colector que tiene una lista con todas las instancias de muros y tipos de muros en la vista actual
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 1.7.4 OBTENER LOS Element DE UN COLECTOR
+            try
+            {
+                // Obtener los elementos del colector
+                FilteredElementCollector Instancia_del_colector_muros = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Walls);
+
+                IList<Element> Elementos_del_colector = Instancia_del_colector_muros.ToElements();
+                // Devuelve los elementos extraídos por el colector usado
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 1.7.5 OBTENER LOS ElementId DE UN COLECTOR
+            try
+            {
+                // Obtener los Ids de los elementos del colector
+                FilteredElementCollector Instancia_del_colector_muros = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Walls);
+
+                ICollection<ElementId> Ids_de_elementos_del_colector = Instancia_del_colector_muros.ToElementIds();
+                // Devuelve los IDs de los elementos extraídos por el colector usado
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 1.7.6 OBTENER LOS TIPOS ElementType DE UN COLECTOR
+            try
+            {
+                // Obtener solo los tipos de elementos (familias)
+                FilteredElementCollector Instancia_del_colector_muros = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Walls);
+
+                IList<Element> Tipos_de_elementos = Instancia_del_colector_muros.WhereElementIsElementType().ToElements();
+                // Devuelve las familias
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 1.7.7 OBTENER LAS INSTANCIAS DE UN COLECTOR
+            try
+            {
+                // Obtener solo las instancias de elementos
+                FilteredElementCollector Instancia_del_colector_muros = new FilteredElementCollector(doc)
+                        .OfCategory(BuiltInCategory.OST_Walls);
+                IList<Element> Instancias_de_elementos = Instancia_del_colector_muros.WhereElementIsNotElementType().ToElements();
+                // Devuelve las instancias
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 1.7.8 COLECTOR POR CLASE
+            try
+            {
+                FilteredElementCollector instanciaDelColectorMuros = new FilteredElementCollector(doc)
+                    .OfClass(typeof(Wall));
+            }
+            catch (Exception ex)
+            {
+                message = ex.Message;
+            }
+
+            #endregion
+
+            #region 1.7.9 EJEMPLOS DE ESTRUCTURAS COMPLETAS
+            try
+            {
+                IList<ElementId> Ids_familias_muros = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Walls).WhereElementIsElementType().ToElementIds().ToList();
+
+                IList<ElementId> Ids_instancias_muros = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Walls).WhereElementIsNotElementType().ToElementIds().ToList();
+
+                IList<ElementId> Ids_familias_muros_2 = new FilteredElementCollector(doc)
+                    .OfClass(typeof(Wall)).WhereElementIsElementType().ToElementIds().ToList();
+
+                IList<ElementId> Ids_instancias_muros_2 = new FilteredElementCollector(doc)
+                    .OfClass(typeof(Wall)).WhereElementIsNotElementType().ToElementIds().ToList();
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
 
             // 2.0 ----------------------------------- SELECCION EN EL MODELO DE REVIT ------------------------------------
 
@@ -676,7 +861,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // 2.5 SELECCION DE ELEMENTOS - POR RECTANGULOS
+            // 2.5 SELECCION DE ELEMENTOS - POR RECTANGULOS ------------------- FALTA ORDENAR A PARTIR DE ACA
 
             #region 2.5.1 SELECCION POR RECTANGULO "PickElementsByRectangle()"
             try
@@ -705,7 +890,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.5.2 SELECCIONAR ELEMENTOS CON PickObjects Y FILTRO - Permite seleccionar por rectangulo
+            #region 2.5.3 SELECCIONAR ELEMENTOS CON PickObjects Y FILTRO - Permite seleccionar por rectangulo
             try
             {
                 ISelectionFilter selectionFilter = new FiltroDeSeleccionDeMuros_1();
@@ -736,7 +921,128 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            #region 2.11 AGREGAR UNA A UNA SELECCION PREVIA UNA NUEVA SELECCION
+            #region 2.5.4 SELECCION CON FILTROS - El filtro esta en una clase nueva llamada "FiltroDeSeleccionDeMuros_1"
+            try
+            {
+                // Creamos una instancia de filtro usando una clase de filtro ya creada
+                ISelectionFilter FiltroDeSeleccionDeMuro_1 = new FiltroDeSeleccionDeMuros_1();
+
+                // FILTRO USANDO "PickObject"
+                // Seleccionamos un muro usando la instancia del filtro creada, y obtenemos la referencia del mismo.
+                Reference SeleccionDeMuroFiltrado_1 = uidoc.Selection.
+                    PickObject(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione un muro");
+
+                // Obtenemos el Element desde la referencia
+                Element ElementoSeleccionado_1 = doc.GetElement(SeleccionDeMuroFiltrado_1.ElementId);
+
+                // FILTRO USANDO "PickObjects"
+                // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de referencias.
+                IList<Reference> SeleccionDeMurosFiltrados_2 = uidoc.Selection.
+                    PickObjects(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione muros");
+
+                // Obtenemos una lista de Element desde la lista de Reference
+                IList<Element> ListaDeElementos = new List<Element>();
+                foreach (Reference Referencia in SeleccionDeMurosFiltrados_2)
+                {
+                    Element ElementoSeleccionado_2 = doc.GetElement(Referencia.ElementId);
+                    ListaDeElementos.Add(ElementoSeleccionado_2);
+                }
+
+                // FILTRO USANDO "PickElementsByRectangle" - EN ESTE CASO OBTENEMOS DIRECTAMENTE: Element
+                // Selecciona los elementos dentro del rectángulo dibujado por el usuario
+                IList<Element> selectedElements = uidoc.Selection.
+                    PickElementsByRectangle(FiltroDeSeleccionDeMuro_1, "Seleccione muros dentro del rectángulo");
+
+                foreach (Element elem in selectedElements)
+                {
+                    TaskDialog.Show("Selección", "Has seleccionado el muro: " + elem.Name);
+                }
+
+                foreach (Element elem in selectedElements)
+                {
+                    TaskDialog.Show("Selección", "Has seleccionado el muro: " + elem.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+            // FALTA SUBDIVIDIR LOS 3 METODOS, PICK OBJECT(), PICK OBJECTS() Y PICKELEMENTSBYRECTANGLE()
+
+            #region 2.5.5 SELECCION CON FILTROS - Filtramos caras planas y mostramos su nombre y area.
+            try
+            {
+                ISelectionFilter FiltroDeCarasPlanas_1 = new FiltroDeSeleccionDeCarasPlanas_1(uidoc.Document);
+                // El filtro esta definido en una nueva clase llamada "FiltroDeSeleccionDeCarasPlanas_1"
+
+                Reference CarasDeReferencia = uidoc.Selection.PickObject(ObjectType.Face, FiltroDeCarasPlanas_1, "Seleccione caras");
+                if (CarasDeReferencia != null)
+                {
+                    // Obtenemos el elemento y la cara del elemento.
+                    Element Elemento = doc.GetElement(CarasDeReferencia.ElementId);
+                    GeometryObject GeometriaDelElemento = Elemento.GetGeometryObjectFromReference(CarasDeReferencia);
+                    Face Cara = GeometriaDelElemento as Face;
+
+                    // Mostramos el nombre y el area del elemento.
+                    TaskDialog.Show("Superficie seleccionada", "Nombre del elemento: " + Elemento.Name + "\n"
+                        + "Area del elemento" + Cara.Area.ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region 2.5.6 SELECCION CON FILTRO MULTI-CATEGORIA
+            try
+            {
+                // Ejemplo de uso
+                List<string> categoriasSeleccionadas = new List<string> { "Walls", "Floors", "Doors" };
+                FiltroDeSeleccionDeCategoriaMultiple filtroMultiple = new FiltroDeSeleccionDeCategoriaMultiple(categoriasSeleccionadas.ToArray());
+
+                IList<Element> seleccionPorRectangulo = uidoc.Selection.PickElementsByRectangle(filtroMultiple);
+                IList<string> nombres = new List<string>();
+
+                foreach (Element element in seleccionPorRectangulo)
+                {
+                    nombres.Add(element.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+            // FALTA AGREGAR UN FILTRO QUE SOLO SELECCIONE UNA CATEGORIA O GRUPO DE CATEGORIAS, SIN MAS LIMITACIONES.
+            // FALTA AGREGAR FILTROS CON MAS VARIEDAD DE LIMITACIONES, PARA EJEMPLIFICAR.
+
+            #region 2.5.7 SELECCION CON FILTRO MULTI-CATEGORIA Y DISCRIMINACION ESPECIAL PARA MUROS
+            try
+            {
+                // Ejemplo de uso
+                List<string> categoriasSeleccionadas = new List<string> { "Walls", "Floors", "Doors" };
+                FiltroDeSeleccionDeCategoriaMultiple_DiscriminacionDeMuros filtroMultiple =
+                    new FiltroDeSeleccionDeCategoriaMultiple_DiscriminacionDeMuros(categoriasSeleccionadas.ToArray());
+
+                IList<Element> seleccionPorRectangulo = uidoc.Selection.PickElementsByRectangle(filtroMultiple);
+                IList<string> nombres = new List<string>();
+
+                foreach (Element element in seleccionPorRectangulo)
+                {
+                    nombres.Add(element.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            // 2.6 AGREGAR UNA SELECCION NUEVA
+
+            #region 2.6.1 AGREGAR UNA A UNA SELECCION PREVIA UNA NUEVA SELECCION
             try
             {
                 ISelectionFilter selectionFilter = new FiltroDeSeleccionDeMuros_1();
@@ -772,63 +1078,6 @@ namespace Apuntes_de_Csharp_Revit_API
                 // Incorporamos los IDs a selección actual
                 uidoc.Selection.SetElementIds(elementIds);
                 return Result.Succeeded;
-            }
-            catch( Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            // 2.6 SELECCION CON FILTROS
-
-            #region 2.7 SELECCION CON FILTROS - El filtro esta en una clase nueva llamada "FiltroDeSeleccionDeMuros_1"
-            try
-            {
-                // Creamos una instancia de filtro usando una clase de filtro ya creada
-                ISelectionFilter FiltroDeSeleccionDeMuro_1 = new FiltroDeSeleccionDeMuros_1();
-
-                // Seleccionamos un muro usando la instancia del filtro creada, y obtenemos la referencia del mismo.
-                Reference SeleccionDeMuroFiltrado_1 = uidoc.Selection.
-                    PickObject(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione un muro");
-                // Obtenemos el Element desde la referencia
-                Element ElementoSeleccionado_1 = doc.GetElement(SeleccionDeMuroFiltrado_1.ElementId);
-
-                // Seleccionamos varios muros usando la instancia del filtro creado, y los colocamos en una lista de referencias.
-                IList<Reference> SeleccionDeMurosFiltrados_2 = uidoc.Selection.
-                    PickObjects(ObjectType.Element, FiltroDeSeleccionDeMuro_1, "Seleccione muros");
-
-                // Obtenemos una lista de Element desde la lista de Reference
-                IList<Element> ListaDeElementos = new List<Element>();
-                foreach (Reference Referencia in SeleccionDeMurosFiltrados_2)
-                {
-                    Element ElementoSeleccionado_2 = doc.GetElement(Referencia.ElementId);
-                    ListaDeElementos.Add(ElementoSeleccionado_2);
-                }
-            }
-            catch (Exception ex)
-            {
-                message = ex.ToString();
-            }
-            #endregion
-
-            #region 2.8 SELECCION CON FILTROS - Filtramos caras planas y mostramos su nombre y area.
-            try
-            {
-                ISelectionFilter FiltroDeCarasPlanas_1 = new FiltroDeSeleccionDeCarasPlanas_1(uidoc.Document);
-                // El filtro esta definido en una nueva clase llamada "FiltroDeSeleccionDeCarasPlanas_1"
-
-                Reference CarasDeReferencia = uidoc.Selection.PickObject(ObjectType.Face, FiltroDeCarasPlanas_1, "Seleccione caras");
-                if (CarasDeReferencia != null)
-                {
-                    // Obtenemos el elemento y la cara del elemento.
-                    Element Elemento = doc.GetElement(CarasDeReferencia.ElementId);
-                    GeometryObject GeometriaDelElemento = Elemento.GetGeometryObjectFromReference(CarasDeReferencia);
-                    Face Cara = GeometriaDelElemento as Face;
-
-                    // Mostramos el nombre y el area del elemento.
-                    TaskDialog.Show("Superficie seleccionada", "Nombre del elemento: " + Elemento.Name + "\n"
-                        + "Area del elemento" + Cara.Area.ToString());
-                }
             }
             catch (Exception ex)
             {
@@ -954,6 +1203,35 @@ namespace Apuntes_de_Csharp_Revit_API
             #endregion
 
             #region FILTRO MULTICATEGORIA
+            try
+            {
+                // CREACION DE UN FILTRO MULTI-CATEGORIA
+                List<BuiltInCategory> categorias = new List<BuiltInCategory>();
+                // List<> en C# se utiliza para crear una lista fuertemente tipada
+                // Agregamos las "BuiltInCategory" que necesitemos
+
+                categorias.Add(BuiltInCategory.OST_Walls);
+                categorias.Add(BuiltInCategory.OST_Floors);
+                categorias.Add(BuiltInCategory.OST_Ceilings);
+
+                // Creación del filtro multicategoría
+                ElementMulticategoryFilter filtroMultiple = new ElementMulticategoryFilter(categorias);
+
+                // Colección de elementos filtrados en base al filtro
+                FilteredElementCollector colectorMultiple = new FilteredElementCollector(doc, doc.ActiveView.Id);
+                ICollection<Element> elementosDelFiltro = colectorMultiple.WherePasses(filtroMultiple).ToElements();
+
+                // Obtener los Ids de los elementos filtrados
+                ICollection<ElementId> idsDelFiltro = colectorMultiple.WherePasses(filtroMultiple).ToElementIds();
+
+            }
+            catch (Exception ex)
+            {
+                message = ex.ToString();
+            }
+            #endregion
+
+            #region FILTRO MULTICLASE
             try
             {
                 // Filtro que toma varios tipos diferentes
@@ -1276,7 +1554,7 @@ namespace Apuntes_de_Csharp_Revit_API
             }
             #endregion
 
-            // 4.2 CREACION DE UN SUELO.
+            // 4.2 CREACION DE UN SUELO
 
             #region SUELO CREADO CON UN AREA HORIZONTAL
             try
@@ -6407,6 +6685,70 @@ namespace Apuntes_de_Csharp_Revit_API
             }
 
             return false;
+        }
+    }
+    #endregion
+
+    #region FiltroDeSeleccionDeCategoriaMultiple
+    public class FiltroDeSeleccionDeCategoriaMultiple : ISelectionFilter
+    {
+        private readonly List<string> categorias;
+
+        public FiltroDeSeleccionDeCategoriaMultiple(params string[] categorias)
+        {
+            this.categorias = categorias.ToList();
+        }
+
+        public bool AllowElement(Element element)
+        {
+            return categorias.Contains(element.Category.Name);
+        }
+
+        public bool AllowReference(Reference refer, XYZ point)
+        {
+            return true;
+        }
+    }
+    #endregion
+
+    #region FiltroDeSeleccionDeCategoriaMultiple_DiscriminacionDeMuros
+    public class FiltroDeSeleccionDeCategoriaMultiple_DiscriminacionDeMuros : ISelectionFilter
+    {
+        private readonly string[] categorias;
+
+        public FiltroDeSeleccionDeCategoriaMultiple_DiscriminacionDeMuros(params string[] categorias)
+        {
+            this.categorias = categorias;
+        }
+
+        public bool AllowElement(Element element)
+        {
+            if (element.Category.Name == "Walls")
+            {
+                Parameter alturaElementoParam = element.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM);
+
+                // Permite seleccionar solo muros que tienen alturas conectadas a un nivel (propiedad de solo lectura)
+                if (alturaElementoParam != null && alturaElementoParam.IsReadOnly)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            if (categorias.Contains(element.Category.Name))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool AllowReference(Reference refer, XYZ point)
+        {
+            return true;
         }
     }
     #endregion
